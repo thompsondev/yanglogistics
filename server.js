@@ -17,7 +17,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-i
 app.use(helmet());
 app.use(compression());
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:5500', 'http://localhost:5500'],
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://yanglogistics-production.up.railway.app', 'https://yanglogistics.up.railway.app']
+        : ['http://localhost:3000', 'http://127.0.0.1:5500', 'http://localhost:5500'],
     credentials: true
 }));
 app.use(bodyParser.json({ limit: '10mb' }));

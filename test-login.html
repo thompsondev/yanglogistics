@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Test - YangLogistics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-form {
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .credentials {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Login Test - YangLogistics</h1>
+        
+        <div class="credentials">
+            <h3>Known Admin Credentials:</h3>
+            <p><strong>Email:</strong> admin@yanglogistics.com</p>
+            <p><strong>Password:</strong> Admin123!</p>
+        </div>
+
+        <div class="test-form">
+            <h3>Test Login</h3>
+            <form id="loginTestForm">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" value="admin@yanglogistics.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" value="Admin123!" required>
+                </div>
+                <button type="submit">Test Login</button>
+            </form>
+        </div>
+
+        <div id="result" class="result" style="display: none;"></div>
+
+        <div class="test-form">
+            <h3>Check Database</h3>
+            <button onclick="checkDatabase()">Check Admin Accounts in Database</button>
+        </div>
+
+        <div id="dbResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.getElementById('loginTestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing login...';
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Login Successful!\n\nResponse: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Login Failed!\n\nStatus: ${response.status}\nError: ${data.error}\n\nFull Response: ${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Network Error!\n\nError: ${error.message}`;
+            }
+        });
+
+        async function checkDatabase() {
+            const dbResultDiv = document.getElementById('dbResult');
+            dbResultDiv.style.display = 'block';
+            dbResultDiv.className = 'result info';
+            dbResultDiv.textContent = 'Checking database...';
+            
+            try {
+                const response = await fetch('/api/health');
+                const healthData = await response.json();
+                
+                if (response.ok) {
+                    dbResultDiv.className = 'result success';
+                    dbResultDiv.textContent = `✅ Server is running!\n\nHealth Check: ${JSON.stringify(healthData, null, 2)}\n\nNote: Admin accounts are stored in the database file and not exposed via API for security reasons.`;
+                } else {
+                    dbResultDiv.className = 'result error';
+                    dbResultDiv.textContent = `❌ Server health check failed!\n\nStatus: ${response.status}`;
+                }
+            } catch (error) {
+                dbResultDiv.className = 'result error';
+                dbResultDiv.textContent = `❌ Cannot connect to server!\n\nError: ${error.message}\n\nMake sure the server is running on http://localhost:3000`;
+            }
+        }
+    </script>
+</body>
+</html> 

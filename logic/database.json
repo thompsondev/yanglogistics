@@ -15,8 +15,8 @@
         "quantity": 1
       },
       "serviceType": "Express Delivery",
-      "status": "Delivered",
-      "currentStage": "Delivered",
+      "status": "Failed Delivery",
+      "currentStage": "Failed Delivery",
       "stages": [
         {
           "stage": "Order Placed",
@@ -35,13 +35,19 @@
           "timestamp": "2025-07-12T15:44:40.785Z",
           "location": "Online",
           "description": "Order received and confirmed"
+        },
+        {
+          "stage": "Failed Delivery",
+          "timestamp": "2025-07-12T21:06:29.188Z",
+          "location": "Online",
+          "description": "Order received and confirmed"
         }
       ],
       "estimatedDelivery": "2025-07-14T16:00:00.000Z",
       "actualDelivery": "2025-07-12T15:44:40.785Z",
       "price": 325,
       "createdAt": "2025-07-12T09:44:20.379Z",
-      "updatedAt": "2025-07-12T15:44:40.785Z"
+      "updatedAt": "2025-07-12T21:06:29.188Z"
     },
     {
       "id": "ORD1752313699262752",
@@ -174,9 +180,9 @@
       "id": "ADM1701234567890",
       "firstName": "Admin",
       "lastName": "User",
-                      "email": "admin@yanglogistics.com",
+      "email": "admin@yanglogistics.com",
       "phone": "+1-555-0123",
-                      "company": "YangLogistics",
+      "company": "YangLogistics",
       "role": "super_admin",
       "password": "Admin123!",
       "createdAt": "2024-12-01T10:00:00Z",

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your Package - YangLogistics</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="config.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-text">YangLogistics</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="index.html#services" class="nav-link">Services</a>
+                <a href="index.html#about" class="nav-link">About</a>
+                <a href="index.html#solutions" class="nav-link">Solutions</a>
+                <a href="index.html#contact" class="nav-link">Contact</a>
+                <a href="tracking.html" class="nav-link active">Track Package</a>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tracking Section -->
+    <section class="tracking-section">
+        <div class="container">
+            <div class="tracking-header">
+                <h1>Track Your Package</h1>
+                <p>Enter your tracking number to get real-time updates on your shipment</p>
+            </div>
+            
+            <div class="tracking-form-container">
+                <form id="trackingForm" class="tracking-form">
+                    <div class="form-group">
+                        <input type="text" id="trackingNumber" placeholder="Enter tracking number (e.g., TRK20241201001)" required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Track Package
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tracking Result -->
+            <div id="trackingResult" class="tracking-result" style="display: none;">
+                <div class="tracking-info">
+                    <div class="tracking-header-info">
+                        <h2>Tracking Information</h2>
+                        <div class="tracking-number-display">
+                            <span id="displayTrackingNumber"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="order-details">
+                        <div class="detail-row">
+                            <div class="detail-item">
+                                <label>Status:</label>
+                                <span id="orderStatus" class="status-badge"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Service Type:</label>
+                                <span id="serviceType"></span>
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-item">
+                                <label>Estimated Delivery:</label>
+                                <span id="estimatedDelivery"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Actual Delivery:</label>
+                                <span id="actualDelivery"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="package-details">
+                        <h3>Package Details</h3>
+                        <div class="package-grid">
+                            <div class="package-item">
+                                <label>Weight:</label>
+                                <span id="packageWeight"></span>
+                            </div>
+                            <div class="package-item">
+                                <label>Dimensions:</label>
+                                <span id="packageDimensions"></span>
+                            </div>
+                            <div class="package-item">
+                                <label>Description:</label>
+                                <span id="packageDescription"></span>
+                            </div>
+                            <div class="package-item">
+                                <label>Quantity:</label>
+                                <span id="packageQuantity"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="addresses">
+                        <div class="address-section">
+                            <h3>Pickup Address</h3>
+                            <p id="pickupAddress"></p>
+                        </div>
+                        <div class="address-section">
+                            <h3>Delivery Address</h3>
+                            <p id="deliveryAddress"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tracking Timeline -->
+                <div class="tracking-timeline">
+                    <h3>Shipment Progress</h3>
+                    <div id="timelineContainer" class="timeline">
+                        <!-- Timeline items will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- No Result Message -->
+            <div id="noResult" class="no-result" style="display: none;">
+                <div class="no-result-content">
+                    <i class="fas fa-search"></i>
+                    <h3>No tracking information found</h3>
+                    <p>The tracking number you entered could not be found in our system. Please check the number and try again.</p>
+                    <div class="no-result-actions">
+                        <button onclick="clearTracking()" class="btn btn-secondary">Try Another Number</button>
+                        <a href="order.html" class="btn btn-primary">Place New Order</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Global Footer Container -->
+    <div id="global-footer"></div>
+
+    <script src="api.js"></script>
+    <script src="tracking.js"></script>
+    <script src="components/footer.js"></script>
+</body>
+</html> 
