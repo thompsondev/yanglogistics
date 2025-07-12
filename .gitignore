@@ -34,6 +34,7 @@ build/Release
 
 # Dependency directories
 node_modules/
+node_modules
 
 # Optional npm cache directory
 .npm
@@ -52,6 +53,29 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # dataconnect generated files
 .dataconnect
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test files
+test-login.html
