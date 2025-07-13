@@ -257,7 +257,8 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
     }
 });
 
-app.post('/api/orders', authenticateToken, async (req, res) => {
+// Allow anyone to create an order (no authentication)
+app.post('/api/orders', async (req, res) => {
     try {
         const {
             customerName,
@@ -447,7 +448,7 @@ app.patch('/api/orders/:id/status', authenticateToken, async (req, res) => {
     }
 });
 
-// Tracking route (public)
+// Tracking route (public, no authentication)
 app.get('/api/track/:trackingNumber', async (req, res) => {
     try {
         const { trackingNumber } = req.params;
