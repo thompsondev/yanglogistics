@@ -281,9 +281,15 @@ app.post('/api/orders', async (req, res) => {
         if (!customerName || !customerEmail || !customerPhone || !pickupAddress || !deliveryAddress || !serviceType) {
             return res.status(400).json({ error: 'Required fields are missing' });
         }
+        if (!dimensions || typeof dimensions !== 'string' || !dimensions.includes('x')) {
+            return res.status(400).json({ error: 'Invalid or missing dimensions. Format should be LxWxH (e.g., 50x30x20).' });
+        }
+        if (!weight || isNaN(parseFloat(weight))) {
+            return res.status(400).json({ error: 'Invalid or missing weight.' });
+        }
 
         const db = await readDatabase();
-        
+
         const order = {
             id: generateOrderId(),
             trackingNumber: generateTrackingNumber(),
@@ -293,8 +299,8 @@ app.post('/api/orders', async (req, res) => {
             pickupAddress,
             deliveryAddress,
             serviceType,
-            weight: weight || 'N/A',
-            dimensions: dimensions || 'N/A',
+            weight,
+            dimensions,
             description: description || '',
             specialInstructions: specialInstructions || '',
             status: 'Order Placed',
