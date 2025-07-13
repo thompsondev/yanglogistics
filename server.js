@@ -8,6 +8,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const morgan = require('morgan');
 
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy for correct client IP and rate limiting
@@ -23,6 +24,9 @@ app.use(cors({
 }));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Logging middleware
+app.use(morgan('dev'));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -254,7 +258,7 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('Get orders error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error (get orders)', details: error.message });
     }
 });
 
@@ -320,7 +324,7 @@ app.post('/api/orders', async (req, res) => {
 
     } catch (error) {
         console.error('Create order error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error (create order)', details: error.message });
     }
 });
 
@@ -339,7 +343,7 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('Get order error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error (get order)', details: error.message });
     }
 });
 
@@ -372,7 +376,7 @@ app.put('/api/orders/:id', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('Update order error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error (update order)', details: error.message });
     }
 });
 
@@ -397,7 +401,7 @@ app.delete('/api/orders/:id', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('Delete order error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error (delete order)', details: error.message });
     }
 });
 
@@ -445,7 +449,7 @@ app.patch('/api/orders/:id/status', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('Update status error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error (update status)', details: error.message });
     }
 });
 
@@ -467,7 +471,7 @@ app.get('/api/track/:trackingNumber', async (req, res) => {
 
     } catch (error) {
         console.error('Tracking error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error (tracking)', details: error.message });
     }
 });
 
@@ -609,6 +613,12 @@ app.use((err, req, res, next) => {
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
+});
+
+// Catch-all error handler
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'Something went wrong (unhandled error)', details: err.message });
 });
 
 // Start server
