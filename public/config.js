@@ -8,7 +8,7 @@ const config = {
     // Production (Railway/Heroku/etc)
     production: {
         // Replace this with your actual Railway URL once deployed
-        API_BASE_URL: 'https://your-railway-app-name.railway.app/api'
+        API_BASE_URL: 'https://yanglogistics-production.up.railway.app/api'
     }
 };
 
