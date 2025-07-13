@@ -17,14 +17,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-i
 app.use(helmet());
 app.use(compression());
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:5500', 'http://localhost:5500'],
+    origin: ['https://yanglogistics-portal.web.app', 'http://localhost:3000', 'http://127.0.0.1:5500', 'http://localhost:5500'],
     credentials: true
 }));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// Serve static files
-app.use(express.static(path.join(__dirname)));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -102,7 +99,16 @@ function generateOrderId() {
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
-                    message: 'YangLogistics API is running',
+        message: 'YangLogistics API is running on Railway',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Root route for Railway
+app.get('/', (req, res) => {
+    res.json({ 
+        message: 'YangLogistics API Server',
+        health: '/api/health',
         timestamp: new Date().toISOString()
     });
 });
@@ -251,12 +257,78 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
     }
 });
 
+app.post('/api/orders', authenticateToken, async (req, res) => {
+    try {
+        const {
+            customerName,
+            customerEmail,
+            customerPhone,
+            pickupAddress,
+            deliveryAddress,
+            serviceType,
+            weight,
+            dimensions,
+            description,
+            specialInstructions
+        } = req.body;
+
+        if (!customerName || !customerEmail || !customerPhone || !pickupAddress || !deliveryAddress || !serviceType) {
+            return res.status(400).json({ error: 'Required fields are missing' });
+        }
+
+        const db = await readDatabase();
+        
+        const order = {
+            id: generateOrderId(),
+            trackingNumber: generateTrackingNumber(),
+            customerName,
+            customerEmail,
+            customerPhone,
+            pickupAddress,
+            deliveryAddress,
+            serviceType,
+            weight: weight || 'N/A',
+            dimensions: dimensions || 'N/A',
+            description: description || '',
+            specialInstructions: specialInstructions || '',
+            status: 'Order Placed',
+            currentStage: 'Order Placed',
+            price: calculatePrice(serviceType, weight, dimensions),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            estimatedDelivery: calculateEstimatedDelivery(serviceType),
+            stages: [
+                {
+                    status: 'Order Placed',
+                    timestamp: new Date().toISOString(),
+                    location: 'Order Processing Center',
+                    description: 'Order has been received and is being processed'
+                }
+            ]
+        };
+
+        db.orders.push(order);
+        await writeDatabase(db);
+
+        res.status(201).json({
+            success: true,
+            order,
+            message: 'Order created successfully'
+        });
+
+    } catch (error) {
+        console.error('Create order error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.get('/api/orders/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const db = await readDatabase();
         
         const order = db.orders.find(o => o.id === id);
+        
         if (!order) {
             return res.status(404).json({ error: 'Order not found' });
         }
@@ -269,61 +341,14 @@ app.get('/api/orders/:id', authenticateToken, async (req, res) => {
     }
 });
 
-app.post('/api/orders', async (req, res) => {
-    try {
-        const orderData = req.body;
-        const db = await readDatabase();
-
-        // Validate required fields
-        const requiredFields = ['customerName', 'customerEmail', 'customerPhone', 'pickupAddress', 'deliveryAddress', 'packageDetails', 'serviceType'];
-        for (const field of requiredFields) {
-            if (!orderData[field]) {
-                return res.status(400).json({ error: `${field} is required` });
-            }
-        }
-
-        // Create new order
-        const newOrder = {
-            id: generateOrderId(),
-            trackingNumber: generateTrackingNumber(),
-            ...orderData,
-            status: 'Order Placed',
-            currentStage: 'Order Placed',
-            stages: [{
-                stage: 'Order Placed',
-                timestamp: new Date().toISOString(),
-                location: 'Online',
-                description: 'Order received and confirmed'
-            }],
-            estimatedDelivery: calculateEstimatedDelivery(orderData.serviceType),
-            actualDelivery: null,
-            price: calculatePrice(orderData.serviceType, orderData.packageDetails.weight, orderData.packageDetails.dimensions),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-
-        db.orders.push(newOrder);
-        await writeDatabase(db);
-
-        res.status(201).json({
-            success: true,
-            order: newOrder,
-            message: 'Order created successfully'
-        });
-
-    } catch (error) {
-        console.error('Create order error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
 app.put('/api/orders/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
+        
         const db = await readDatabase();
-
         const orderIndex = db.orders.findIndex(o => o.id === id);
+        
         if (orderIndex === -1) {
             return res.status(404).json({ error: 'Order not found' });
         }
@@ -353,19 +378,19 @@ app.delete('/api/orders/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const db = await readDatabase();
-
+        
         const orderIndex = db.orders.findIndex(o => o.id === id);
+        
         if (orderIndex === -1) {
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        const deletedOrder = db.orders.splice(orderIndex, 1)[0];
+        db.orders.splice(orderIndex, 1);
         await writeDatabase(db);
 
         res.json({
             success: true,
-            message: 'Order deleted successfully',
-            deletedOrder
+            message: 'Order deleted successfully'
         });
 
     } catch (error) {
@@ -375,25 +400,27 @@ app.delete('/api/orders/:id', authenticateToken, async (req, res) => {
 });
 
 // Update order status
-app.post('/api/orders/:id/status', authenticateToken, async (req, res) => {
+app.patch('/api/orders/:id/status', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { status, location, description } = req.body;
-        const db = await readDatabase();
 
-        const orderIndex = db.orders.findIndex(o => o.id === id);
-        if (orderIndex === -1) {
+        if (!status) {
+            return res.status(400).json({ error: 'Status is required' });
+        }
+
+        const db = await readDatabase();
+        const order = db.orders.find(o => o.id === id);
+
+        if (!order) {
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        const order = db.orders[orderIndex];
-
-        // Add new stage
         const newStage = {
-            stage: status,
+            status,
             timestamp: new Date().toISOString(),
-            location: location || 'Unknown',
-            description: description || 'Status updated'
+            location: location || 'Processing Center',
+            description: description || `Order status updated to ${status}`
         };
 
         order.stages.push(newStage);
@@ -571,9 +598,6 @@ function calculatePrice(serviceType, weight, dimensions) {
     return Math.round(basePrice + Math.max(weightPrice, volumePrice));
 }
 
-// Serve static files
-app.use(express.static(path.join(__dirname)));
-
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -589,8 +613,7 @@ app.use((req, res) => {
 app.listen(PORT, () => {
     console.log(`🚚 YangLogistics API Server running on port ${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-    console.log(`🌐 Frontend: http://localhost:${PORT}`);
-    console.log(`📚 API Documentation: http://localhost:${PORT}/api/health`);
+    console.log(`🌐 API Base: http://localhost:${PORT}`);
 });
 
 module.exports = app; 
