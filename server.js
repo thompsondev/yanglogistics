@@ -273,16 +273,12 @@ app.post('/api/orders', async (req, res) => {
             deliveryAddress,
             serviceType,
             weight,
-            dimensions,
             description,
             specialInstructions
         } = req.body;
 
         if (!customerName || !customerEmail || !customerPhone || !pickupAddress || !deliveryAddress || !serviceType) {
             return res.status(400).json({ error: 'Required fields are missing' });
-        }
-        if (!dimensions || typeof dimensions !== 'string' || !dimensions.includes('x')) {
-            return res.status(400).json({ error: 'Invalid or missing dimensions. Format should be LxWxH (e.g., 50x30x20).' });
         }
         if (!weight || isNaN(parseFloat(weight))) {
             return res.status(400).json({ error: 'Invalid or missing weight.' });
@@ -300,12 +296,11 @@ app.post('/api/orders', async (req, res) => {
             deliveryAddress,
             serviceType,
             weight,
-            dimensions,
             description: description || '',
             specialInstructions: specialInstructions || '',
             status: 'Order Placed',
             currentStage: 'Order Placed',
-            price: calculatePrice(serviceType, weight, dimensions),
+            price: calculatePrice(serviceType, weight),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             estimatedDelivery: calculateEstimatedDelivery(serviceType),
@@ -588,14 +583,10 @@ function calculateEstimatedDelivery(serviceType) {
     return estimatedDate.toISOString();
 }
 
-function calculatePrice(serviceType, weight, dimensions) {
+function calculatePrice(serviceType, weight) {
     const weightNum = parseFloat(weight);
-    const [length, width, height] = dimensions.split('x').map(d => parseFloat(d));
-    const volume = length * width * height;
-    
     let basePrice = 0;
     let weightMultiplier = 0;
-    
     switch (serviceType) {
         case 'Standard Delivery': basePrice = 150; weightMultiplier = 5; break;
         case 'Express Delivery': basePrice = 250; weightMultiplier = 8; break;
@@ -603,11 +594,8 @@ function calculatePrice(serviceType, weight, dimensions) {
         case 'Ocean Freight': basePrice = 200; weightMultiplier = 3; break;
         default: basePrice = 150; weightMultiplier = 5;
     }
-    
     const weightPrice = weightNum * weightMultiplier;
-    const volumePrice = volume * 0.01;
-    
-    return Math.round(basePrice + Math.max(weightPrice, volumePrice));
+    return Math.round(basePrice + weightPrice);
 }
 
 // Error handling middleware
