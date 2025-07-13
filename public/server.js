@@ -297,7 +297,7 @@ app.post('/api/orders', async (req, res) => {
             }],
             estimatedDelivery: calculateEstimatedDelivery(orderData.serviceType),
             actualDelivery: null,
-            price: calculatePrice(orderData.serviceType, orderData.packageDetails.weight, orderData.packageDetails.dimensions),
+            price: calculatePrice(orderData.serviceType, orderData.packageDetails.weight),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
@@ -549,10 +549,8 @@ function calculateEstimatedDelivery(serviceType) {
     return estimatedDate.toISOString();
 }
 
-function calculatePrice(serviceType, weight, dimensions) {
+function calculatePrice(serviceType, weight) {
     const weightNum = parseFloat(weight);
-    const [length, width, height] = dimensions.split('x').map(d => parseFloat(d));
-    const volume = length * width * height;
     
     let basePrice = 0;
     let weightMultiplier = 0;
@@ -566,9 +564,8 @@ function calculatePrice(serviceType, weight, dimensions) {
     }
     
     const weightPrice = weightNum * weightMultiplier;
-    const volumePrice = volume * 0.01;
     
-    return Math.round(basePrice + Math.max(weightPrice, volumePrice));
+    return Math.round(basePrice + weightPrice);
 }
 
 // Serve static files

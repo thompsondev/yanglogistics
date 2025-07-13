@@ -361,10 +361,7 @@ function viewOrderDetails(orderId) {
                     <label>Weight:</label>
                     <span>${order.packageDetails.weight}</span>
                 </div>
-                <div class="detail-item">
-                    <label>Dimensions:</label>
-                    <span>${order.packageDetails.dimensions}</span>
-                </div>
+                
                 <div class="detail-item">
                     <label>Description:</label>
                     <span>${order.packageDetails.description}</span>

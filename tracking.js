@@ -78,9 +78,8 @@ function displayTrackingResult(order) {
         (actualDelivery.toLocaleDateString() + ' ' + actualDelivery.toLocaleTimeString()) : 'Not delivered yet';
     
     // Package details
-    document.getElementById('packageWeight').textContent = order.packageDetails.weight;
-    document.getElementById('packageDimensions').textContent = order.packageDetails.dimensions;
-    document.getElementById('packageDescription').textContent = order.packageDetails.description;
+            document.getElementById('packageWeight').textContent = order.packageDetails.weight;
+        document.getElementById('packageDescription').textContent = order.packageDetails.description;
     document.getElementById('packageQuantity').textContent = order.packageDetails.quantity;
     
     // Addresses

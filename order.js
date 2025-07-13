@@ -56,7 +56,7 @@ orderForm.addEventListener('submit', async (e) => {
 // Validate order data
 function validateOrderData(data) {
     // Check required fields
-    const requiredFields = ['customerName', 'customerEmail', 'customerPhone', 'pickupAddress', 'deliveryAddress', 'packageWeight', 'packageDimensions', 'packageDescription'];
+    const requiredFields = ['customerName', 'customerEmail', 'customerPhone', 'pickupAddress', 'deliveryAddress', 'packageWeight', 'packageDescription'];
     
     for (const field of requiredFields) {
         if (!data[field] || data[field].trim() === '') {
@@ -94,12 +94,7 @@ function validateOrderData(data) {
         return false;
     }
     
-    // Validate dimensions format
-    const dimensionsRegex = /^\d+x\d+x\d+$/;
-    if (!dimensionsRegex.test(data.packageDimensions.replace(/\s/g, ''))) {
-        showNotification('Please enter dimensions in format: LxWxH (e.g., 50x30x20)', 'error');
-        return false;
-    }
+
     
     return true;
 }
@@ -116,7 +111,6 @@ async function createOrder(orderData) {
             deliveryAddress: orderData.deliveryAddress,
             packageDetails: {
                 weight: orderData.packageWeight,
-                dimensions: orderData.packageDimensions,
                 description: orderData.packageDescription,
                 quantity: parseInt(orderData.packageQuantity)
             },
@@ -171,10 +165,8 @@ function calculateEstimatedDelivery(serviceType) {
 }
 
 // Calculate price based on service and package details
-function calculatePrice(serviceType, weight, dimensions) {
+function calculatePrice(serviceType, weight) {
     const weightNum = parseFloat(weight);
-    const [length, width, height] = dimensions.split('x').map(d => parseFloat(d));
-    const volume = length * width * height;
     
     let basePrice = 0;
     let weightMultiplier = 0;
@@ -201,11 +193,10 @@ function calculatePrice(serviceType, weight, dimensions) {
             weightMultiplier = 5;
     }
     
-    // Calculate price based on weight and volume
+    // Calculate price based on weight
     const weightPrice = weightNum * weightMultiplier;
-    const volumePrice = volume * 0.01; // $0.01 per cubic cm
     
-    return Math.round(basePrice + Math.max(weightPrice, volumePrice));
+    return Math.round(basePrice + weightPrice);
 }
 
 // Show order confirmation modal
