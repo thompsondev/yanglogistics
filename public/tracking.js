@@ -79,7 +79,6 @@ function displayTrackingResult(order) {
     
     // Package details
     document.getElementById('packageWeight').textContent = order.packageDetails.weight;
-    document.getElementById('packageDimensions').textContent = order.packageDetails.dimensions;
     document.getElementById('packageDescription').textContent = order.packageDetails.description;
     document.getElementById('packageQuantity').textContent = order.packageDetails.quantity;
     
