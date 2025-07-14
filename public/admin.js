@@ -328,11 +328,11 @@ function renderOrdersTable() {
             orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString();
         
         row.innerHTML = `
+            <td>${order.id}</td>
             <td>${order.trackingNumber}</td>
             <td>${order.customerName}</td>
             <td>${order.serviceType}</td>
-            <td>${order.status}</td>
-            <td>$${order.price || 0}</td>
+            <td><span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span></td>
             <td>${formattedDate}</td>
             <td class="actions">
                 <button class="btn btn-sm btn-primary" onclick="viewOrderDetails('${order.id}')" title="View Details">
@@ -363,7 +363,7 @@ function renderOrdersTable() {
 // Enhanced event listeners with mobile optimization
 function setupEventListeners() {
     // Search functionality
-    const searchInput = document.getElementById('searchInput');
+    const searchInput = document.getElementById('searchOrders');
     if (searchInput) {
         searchInput.addEventListener('input', filterOrders);
         
@@ -377,30 +377,65 @@ function setupEventListeners() {
 
     // Filter functionality
     const statusFilter = document.getElementById('statusFilter');
+    const serviceFilter = document.getElementById('serviceFilter');
+    
     if (statusFilter) {
         statusFilter.addEventListener('change', filterOrders);
     }
-
-    // Export functionality
-    const exportBtn = document.getElementById('exportOrders');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', exportOrders);
+    
+    if (serviceFilter) {
+        serviceFilter.addEventListener('change', filterOrders);
     }
+
+    // Modal close buttons
+    const closeButtons = document.querySelectorAll('.modal-close, #closeUpdateModalBtn2, #closeDetailsModalBtn, #closeDeleteModalBtn, #closeDeleteModalBtn2');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modal = btn.closest('.modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+
+    // Update form submission
+    const updateForm = document.getElementById('updateForm');
+    if (updateForm) {
+        updateForm.addEventListener('submit', handleStatusUpdate);
+    }
+
+    // Delete confirmation
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', confirmDelete);
+    }
+
+    // Close modals when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            e.target.style.display = 'none';
+        }
+    });
 }
 
 // Enhanced order filtering with mobile optimization
 function filterOrders() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const searchTerm = document.getElementById('searchOrders').value.toLowerCase();
     const statusFilter = document.getElementById('statusFilter').value;
+    const serviceFilter = document.getElementById('serviceFilter').value;
 
     filteredOrders = allOrders.filter(order => {
         const matchesSearch = order.trackingNumber.toLowerCase().includes(searchTerm) ||
                             order.customerName.toLowerCase().includes(searchTerm) ||
-                            order.customerEmail.toLowerCase().includes(searchTerm);
-        const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-        return matchesSearch && matchesStatus;
+                            order.customerEmail.toLowerCase().includes(searchTerm) ||
+                            order.id.toLowerCase().includes(searchTerm);
+        const matchesStatus = !statusFilter || order.status === statusFilter;
+        const matchesService = !serviceFilter || order.serviceType === serviceFilter;
+        
+                return matchesSearch && matchesStatus && matchesService;
     });
-
+    
     renderOrdersTable();
     
     // Enhanced mobile notification
@@ -431,81 +466,121 @@ function viewOrderDetails(orderId) {
             date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
     };
 
-    const modal = document.getElementById('orderDetailsModal');
+    const modal = document.getElementById('detailsModal');
     const modalContent = document.getElementById('orderDetailsContent');
     
     modalContent.innerHTML = `
-        <div class="modal-header">
-            <h3>Order Details</h3>
-            <button class="close-btn" onclick="closeDetailsModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="order-info">
-                <div class="info-group">
-                    <label>Tracking Number:</label>
-                    <span>${order.trackingNumber}</span>
+        <div class="order-details-grid">
+            <div class="detail-section">
+                <h4><i class="fas fa-info-circle"></i> Order Information</h4>
+                <div class="detail-row">
+                    <div class="detail-item">
+                        <label>Order ID:</label>
+                        <span>${order.id}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Tracking Number:</label>
+                        <span>${order.trackingNumber}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Status:</label>
+                        <span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Service Type:</label>
+                        <span>${order.serviceType}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Price:</label>
+                        <span>$${order.price || 0}</span>
+                    </div>
                 </div>
-                <div class="info-group">
-                    <label>Customer Name:</label>
-                    <span>${order.customerName}</span>
-                </div>
-                <div class="info-group">
-                    <label>Customer Email:</label>
-                    <span>${order.customerEmail}</span>
-                </div>
-                <div class="info-group">
-                    <label>Customer Phone:</label>
-                    <span>${order.customerPhone}</span>
-                </div>
-                <div class="info-group">
-                    <label>Service Type:</label>
-                    <span>${order.serviceType}</span>
-                </div>
-                <div class="info-group">
-                    <label>Status:</label>
-                    <span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span>
-                </div>
-                <div class="info-group">
-                    <label>Price:</label>
-                    <span>$${order.price || 0}</span>
-                </div>
-                <div class="info-group">
-                    <label>Order Date:</label>
-                    <span>${formatDate(orderDate)}</span>
-                </div>
-                <div class="info-group">
-                    <label>Estimated Delivery:</label>
-                    <span>${formatDate(estimatedDelivery)}</span>
-                </div>
-                ${actualDelivery ? `
-                <div class="info-group">
-                    <label>Actual Delivery:</label>
-                    <span>${formatDate(actualDelivery)}</span>
-                </div>
-                ` : ''}
-                <div class="info-group">
-                    <label>Pickup Address:</label>
-                    <span>${order.pickupAddress}</span>
-                </div>
-                <div class="info-group">
-                    <label>Delivery Address:</label>
-                    <span>${order.deliveryAddress}</span>
-                </div>
-                <div class="info-group">
-                    <label>Package Weight:</label>
-                    <span>${order.packageDetails.weight} kg</span>
-                </div>
-                <div class="info-group">
-                    <label>Package Description:</label>
-                    <span>${order.packageDetails.description}</span>
-                </div>
-                ${order.specialInstructions ? `
-                <div class="info-group">
-                    <label>Special Instructions:</label>
-                    <span>${order.specialInstructions}</span>
-                </div>
-                ` : ''}
             </div>
+            
+            <div class="detail-section">
+                <h4><i class="fas fa-user"></i> Customer Information</h4>
+                <div class="detail-row">
+                    <div class="detail-item">
+                        <label>Name:</label>
+                        <span>${order.customerName}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Email:</label>
+                        <span>${order.customerEmail}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Phone:</label>
+                        <span>${order.customerPhone}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4><i class="fas fa-map-marker-alt"></i> Addresses</h4>
+                <div class="detail-row">
+                    <div class="detail-item">
+                        <label>Pickup Address:</label>
+                        <span>${order.pickupAddress}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Delivery Address:</label>
+                        <span>${order.deliveryAddress}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4><i class="fas fa-box"></i> Package Details</h4>
+                <div class="detail-row">
+                    <div class="detail-item">
+                        <label>Weight:</label>
+                        <span>${order.packageDetails.weight} kg</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Dimensions:</label>
+                        <span>${order.packageDetails.dimensions}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Description:</label>
+                        <span>${order.packageDetails.description}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Quantity:</label>
+                        <span>${order.packageDetails.quantity}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4><i class="fas fa-calendar"></i> Timeline</h4>
+                <div class="detail-row">
+                    <div class="detail-item">
+                        <label>Order Date:</label>
+                        <span>${formatDate(orderDate)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Estimated Delivery:</label>
+                        <span>${formatDate(estimatedDelivery)}</span>
+                    </div>
+                    ${actualDelivery ? `
+                    <div class="detail-item">
+                        <label>Actual Delivery:</label>
+                        <span>${formatDate(actualDelivery)}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            ${order.specialInstructions ? `
+            <div class="detail-section">
+                <h4><i class="fas fa-sticky-note"></i> Special Instructions</h4>
+                <div class="detail-row">
+                    <div class="detail-item full-width">
+                        <span>${order.specialInstructions}</span>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
         </div>
     `;
 
@@ -526,7 +601,7 @@ function viewOrderDetails(orderId) {
 
 // Enhanced modal close with mobile optimization
 function closeDetailsModal() {
-    const modal = document.getElementById('orderDetailsModal');
+    const modal = document.getElementById('detailsModal');
     modal.style.display = 'none';
     
     // Restore body scroll on mobile
@@ -545,28 +620,25 @@ function updateOrderStatus(orderId) {
 
     currentOrderId = orderId;
     
-    const modal = document.getElementById('updateStatusModal');
-    const statusSelect = document.getElementById('newStatus');
+    // Populate modal fields
+    document.getElementById('updateOrderId').textContent = order.id;
+    document.getElementById('updateTrackingNumber').textContent = order.trackingNumber;
+    document.getElementById('newStatus').value = order.status;
+    document.getElementById('updateLocation').value = '';
+    document.getElementById('updateDescription').value = '';
     
-    statusSelect.value = order.status;
-    modal.style.display = 'flex';
+    const modal = document.getElementById('updateModal');
+    modal.style.display = 'block';
     
     // Enhanced mobile modal handling
     if (window.innerWidth <= 768) {
         document.body.style.overflow = 'hidden';
-        
-        // Add touch-friendly close functionality
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeUpdateModal();
-            }
-        });
     }
 }
 
 // Enhanced update modal close with mobile optimization
 function closeUpdateModal() {
-    const modal = document.getElementById('updateStatusModal');
+    const modal = document.getElementById('updateModal');
     modal.style.display = 'none';
     
     // Restore body scroll on mobile
