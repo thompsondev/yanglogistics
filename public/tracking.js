@@ -256,6 +256,61 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
+// FAQ Toggle Function
+function toggleFAQ(element) {
+    const faqItem = element.parentElement;
+    const isActive = faqItem.classList.contains('active');
+    
+    // Close all other FAQ items
+    const allFaqItems = document.querySelectorAll('.faq-item');
+    allFaqItems.forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Toggle current item
+    if (!isActive) {
+        faqItem.classList.add('active');
+        
+        // Smooth scroll to the opened FAQ item on mobile
+        if (window.innerWidth <= 768) {
+            const offset = 100;
+            const elementPosition = faqItem.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - offset;
+            
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
+        }
+    }
+}
+
+// Initialize FAQ functionality when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click event listeners to FAQ questions for better accessibility
+    const faqQuestions = document.querySelectorAll('.faq-question');
+    faqQuestions.forEach(question => {
+        question.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleFAQ(this);
+            }
+        });
+        
+        // Add ARIA attributes for accessibility
+        const faqItem = question.parentElement;
+        const answer = faqItem.querySelector('.faq-answer');
+        
+        question.setAttribute('role', 'button');
+        question.setAttribute('tabindex', '0');
+        question.setAttribute('aria-expanded', 'false');
+        question.setAttribute('aria-controls', `faq-answer-${Array.from(faqQuestions).indexOf(question)}`);
+        
+        answer.setAttribute('id', `faq-answer-${Array.from(faqQuestions).indexOf(question)}`);
+        answer.setAttribute('aria-hidden', 'true');
+    });
+});
+
 // Enhanced navbar background change with mobile optimization
 window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');
