@@ -1,16 +1,25 @@
 (function() {
+// Enhanced Admin Dashboard with Mobile Responsiveness
+
 // Global variables
 let allOrders = [];
 let filteredOrders = [];
 let currentOrderId = null;
 
-// Mobile Navigation Toggle
+// Enhanced Mobile Navigation Toggle
 const navToggle = document.getElementById('nav-toggle');
 const navMenu = document.getElementById('nav-menu');
 
 navToggle.addEventListener('click', () => {
     navMenu.classList.toggle('active');
     navToggle.classList.toggle('active');
+    
+    // Prevent body scroll when menu is open
+    if (navMenu.classList.contains('active')) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
 });
 
 // Close mobile menu when clicking on a link
@@ -18,7 +27,17 @@ document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', () => {
         navMenu.classList.remove('active');
         navToggle.classList.remove('active');
+        document.body.style.overflow = '';
     });
+});
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', (e) => {
+    if (!navToggle.contains(e.target) && !navMenu.contains(e.target)) {
+        navMenu.classList.remove('active');
+        navToggle.classList.remove('active');
+        document.body.style.overflow = '';
+    }
 });
 
 // Global variables for real-time updates
@@ -26,7 +45,7 @@ let refreshInterval;
 let lastUpdateTime = new Date();
 let isRealTimeEnabled = true;
 
-// Initialize admin dashboard
+// Enhanced initialization with mobile optimization
 document.addEventListener('DOMContentLoaded', async () => {
     // Check authentication
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
@@ -45,6 +64,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         await initializeDashboard();
         setupRealTimeUpdates();
         setupEventListeners();
+        
+        // Enhanced mobile-specific initializations
+        if (window.innerWidth <= 768) {
+            initializeMobileOptimizations();
+        }
     } catch (error) {
         console.error('Authentication failed:', error);
         // Clear invalid tokens
@@ -54,7 +78,73 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// Initialize dashboard with real-time capabilities
+// Enhanced mobile optimizations
+function initializeMobileOptimizations() {
+    // Optimize touch targets
+    document.querySelectorAll('.btn, .nav-link, .table-row').forEach(el => {
+        el.style.minHeight = '44px';
+        el.style.minWidth = '44px';
+    });
+    
+    // Optimize form inputs for mobile
+    document.querySelectorAll('input, textarea, select').forEach(el => {
+        el.style.fontSize = '16px'; // Prevents iOS zoom
+        el.style.minHeight = '44px'; // Touch-friendly height
+    });
+    
+    // Enhance table for mobile
+    const ordersTable = document.querySelector('.orders-table');
+    if (ordersTable) {
+        ordersTable.style.fontSize = '0.9rem';
+    }
+    
+    // Optimize modals for mobile
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        modal.style.padding = '1rem';
+        modal.style.margin = '1rem';
+    });
+    
+    // Add mobile-specific event listeners
+    setupMobileEventListeners();
+}
+
+// Enhanced mobile event listeners
+function setupMobileEventListeners() {
+    // Handle orientation change
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+            // Close mobile menu on orientation change
+            navMenu.classList.remove('active');
+            navToggle.classList.remove('active');
+            document.body.style.overflow = '';
+            
+            // Re-apply mobile optimizations
+            if (window.innerWidth <= 768) {
+                initializeMobileOptimizations();
+            }
+        }, 500);
+    });
+    
+    // Handle resize events
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            // Close mobile menu if screen becomes large
+            if (window.innerWidth > 768) {
+                navMenu.classList.remove('active');
+                navToggle.classList.remove('active');
+                document.body.style.overflow = '';
+            } else {
+                // Re-apply mobile optimizations
+                initializeMobileOptimizations();
+            }
+        }, 250);
+    });
+}
+
+// Enhanced dashboard initialization with mobile optimization
 async function initializeDashboard() {
     try {
         showLoadingIndicator();
@@ -63,6 +153,11 @@ async function initializeDashboard() {
         renderOrdersTable();
         hideLoadingIndicator();
         updateLastRefreshTime();
+        
+        // Enhanced mobile notification
+        if (window.innerWidth <= 768) {
+            showNotification('Dashboard loaded successfully!', 'success');
+        }
     } catch (error) {
         console.error('Dashboard initialization error:', error);
         hideLoadingIndicator();
@@ -70,7 +165,7 @@ async function initializeDashboard() {
     }
 }
 
-// Setup real-time updates
+// Enhanced real-time updates with mobile optimization
 function setupRealTimeUpdates() {
     // Auto-refresh every 30 seconds
     refreshInterval = setInterval(async () => {
@@ -93,11 +188,11 @@ function setupRealTimeUpdates() {
         realTimeToggle.addEventListener('change', (e) => {
             isRealTimeEnabled = e.target.checked;
             updateRealTimeStatus();
-            if (isRealTimeEnabled) {
-                showNotification('Real-time updates enabled', 'success');
-            } else {
-                showNotification('Real-time updates disabled', 'info');
-            }
+            
+            // Enhanced mobile notification
+            const message = isRealTimeEnabled ? 'Real-time updates enabled' : 'Real-time updates disabled';
+            const type = isRealTimeEnabled ? 'success' : 'info';
+            showNotification(message, type);
         });
     }
 
@@ -105,7 +200,7 @@ function setupRealTimeUpdates() {
     updateRealTimeStatus();
 }
 
-// Refresh all data
+// Enhanced data refresh with mobile optimization
 async function refreshData() {
     try {
         showLoadingIndicator();
@@ -117,7 +212,8 @@ async function refreshData() {
         
         const newOrderCount = allOrders.length;
         if (newOrderCount > previousOrderCount) {
-            showNotification(`New order detected! Total orders: ${newOrderCount}`, 'success');
+            const message = `New order detected! Total orders: ${newOrderCount}`;
+            showNotification(message, 'success');
         }
         
         updateLastRefreshTime();
@@ -129,7 +225,7 @@ async function refreshData() {
     }
 }
 
-// Load orders from database
+// Enhanced order loading with mobile optimization
 async function loadOrders() {
     try {
         console.log('Loading orders from API...');
@@ -152,7 +248,7 @@ async function loadOrders() {
     }
 }
 
-// Update dashboard statistics
+// Enhanced dashboard stats with mobile optimization
 async function updateDashboardStats() {
     try {
         console.log('Loading dashboard stats...');
@@ -182,7 +278,7 @@ async function updateDashboardStats() {
     }
 }
 
-// Render orders table
+// Enhanced orders table rendering with mobile optimization
 function renderOrdersTable() {
     const tableBody = document.getElementById('ordersTableBody');
     tableBody.innerHTML = '';
@@ -199,357 +295,417 @@ function renderOrdersTable() {
         return;
     }
 
+    // Enhanced mobile-friendly table rendering
+    const isMobile = window.innerWidth <= 768;
+    
     filteredOrders.forEach(order => {
         const row = document.createElement('tr');
-        const createdDate = new Date(order.createdAt).toLocaleDateString();
+        row.className = 'table-row';
+        row.setAttribute('data-order-id', order.id);
+        
+        // Enhanced mobile-friendly date formatting
+        const orderDate = new Date(order.createdAt);
+        const formattedDate = isMobile ? 
+            orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+            orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString();
+        
         row.innerHTML = `
-            <td>${order.id}</td>
             <td>${order.trackingNumber}</td>
-            <td>
-                <div class="customer-info">
-                    <strong>${order.customerName}</strong>
-                    <small>${order.customerEmail}</small>
-                </div>
-            </td>
+            <td>${order.customerName}</td>
             <td>${order.serviceType}</td>
-            <td>
-                <span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">
-                    ${order.status}
-                </span>
-            </td>
-            <td>${createdDate}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn-icon btn-view" data-id="${order.id}" title="View Details">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn-icon btn-update" data-id="${order.id}" title="Update Status">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-icon btn-danger btn-delete" data-id="${order.id}" title="Delete Order">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+            <td>${order.status}</td>
+            <td>$${order.price || 0}</td>
+            <td>${formattedDate}</td>
+            <td class="actions">
+                <button class="btn btn-sm btn-primary" onclick="viewOrderDetails('${order.id}')" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="updateOrderStatus('${order.id}')" title="Update Status">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteOrder('${order.id}')" title="Delete Order">
+                    <i class="fas fa-trash"></i>
+                </button>
             </td>
         `;
+        
+        // Enhanced mobile touch handling
+        if (isMobile) {
+            row.addEventListener('click', (e) => {
+                if (!e.target.closest('.actions')) {
+                    viewOrderDetails(order.id);
+                }
+            });
+        }
+        
         tableBody.appendChild(row);
-    });
-
-    // Attach event listeners for action buttons
-    document.querySelectorAll('.btn-view').forEach(btn => {
-        btn.addEventListener('click', function() {
-            viewOrderDetails(this.dataset.id);
-        });
-    });
-    document.querySelectorAll('.btn-update').forEach(btn => {
-        btn.addEventListener('click', function() {
-            updateOrderStatus(this.dataset.id);
-        });
-    });
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', function() {
-            deleteOrder(this.dataset.id);
-        });
     });
 }
 
-// Setup event listeners
+// Enhanced event listeners with mobile optimization
 function setupEventListeners() {
     // Search functionality
-    document.getElementById('searchOrders').addEventListener('input', filterOrders);
-    
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterOrders);
+        
+        // Enhanced mobile search optimization
+        if (window.innerWidth <= 768) {
+            searchInput.addEventListener('focus', () => {
+                searchInput.style.fontSize = '16px';
+            });
+        }
+    }
+
     // Filter functionality
-    document.getElementById('statusFilter').addEventListener('change', filterOrders);
-    document.getElementById('serviceFilter').addEventListener('change', filterOrders);
-    
-    // Update form submission
-    document.getElementById('updateForm').addEventListener('submit', handleStatusUpdate);
-    // Modal close and confirm buttons
-    document.getElementById('closeDetailsModalBtn')?.addEventListener('click', closeDetailsModal);
-    document.getElementById('closeUpdateModalBtn')?.addEventListener('click', closeUpdateModal);
-    document.getElementById('closeDeleteModalBtn')?.addEventListener('click', closeDeleteModal);
-    document.getElementById('confirmDeleteBtn')?.addEventListener('click', confirmDelete);
-    // Logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminLoggedIn');
-            window.location.href = 'login.html';
-        });
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterOrders);
+    }
+
+    // Export functionality
+    const exportBtn = document.getElementById('exportOrders');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportOrders);
     }
 }
 
-// Filter orders
+// Enhanced order filtering with mobile optimization
 function filterOrders() {
-    const searchTerm = document.getElementById('searchOrders').value.toLowerCase();
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const statusFilter = document.getElementById('statusFilter').value;
-    const serviceFilter = document.getElementById('serviceFilter').value;
 
     filteredOrders = allOrders.filter(order => {
-        const matchesSearch = 
-            order.id.toLowerCase().includes(searchTerm) ||
-            order.trackingNumber.toLowerCase().includes(searchTerm) ||
-            order.customerName.toLowerCase().includes(searchTerm) ||
-            order.customerEmail.toLowerCase().includes(searchTerm);
-        
-        const matchesStatus = !statusFilter || order.status === statusFilter;
-        const matchesService = !serviceFilter || order.serviceType === serviceFilter;
-
-        return matchesSearch && matchesStatus && matchesService;
+        const matchesSearch = order.trackingNumber.toLowerCase().includes(searchTerm) ||
+                            order.customerName.toLowerCase().includes(searchTerm) ||
+                            order.customerEmail.toLowerCase().includes(searchTerm);
+        const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+        return matchesSearch && matchesStatus;
     });
 
     renderOrdersTable();
+    
+    // Enhanced mobile notification
+    if (window.innerWidth <= 768 && filteredOrders.length === 0) {
+        showNotification('No orders match your search criteria', 'info');
+    }
 }
 
-// View order details
+// Enhanced order details view with mobile optimization
 function viewOrderDetails(orderId) {
     const order = allOrders.find(o => o.id === orderId);
-    if (!order) return;
+    if (!order) {
+        showNotification('Order not found', 'error');
+        return;
+    }
 
-    const detailsContent = document.getElementById('orderDetailsContent');
-    const createdDate = new Date(order.createdAt).toLocaleString();
-    const estimatedDelivery = new Date(order.estimatedDelivery).toLocaleString();
-    const actualDelivery = order.actualDelivery ? new Date(order.actualDelivery).toLocaleString() : 'Not delivered yet';
+    currentOrderId = orderId;
+    
+    // Enhanced mobile-friendly date formatting
+    const isMobile = window.innerWidth <= 768;
+    const orderDate = new Date(order.createdAt);
+    const estimatedDelivery = new Date(order.estimatedDelivery);
+    const actualDelivery = order.actualDelivery ? new Date(order.actualDelivery) : null;
+    
+    const formatDate = (date) => {
+        return isMobile ? 
+            date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+            date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    };
 
-    detailsContent.innerHTML = `
-        <div class="order-details-grid">
-            <div class="detail-section">
-                <h4>Order Information</h4>
-                <div class="detail-item">
-                    <label>Order ID:</label>
-                    <span>${order.id}</span>
-                </div>
-                <div class="detail-item">
+    const modal = document.getElementById('orderDetailsModal');
+    const modalContent = document.getElementById('orderDetailsContent');
+    
+    modalContent.innerHTML = `
+        <div class="modal-header">
+            <h3>Order Details</h3>
+            <button class="close-btn" onclick="closeDetailsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="order-info">
+                <div class="info-group">
                     <label>Tracking Number:</label>
                     <span>${order.trackingNumber}</span>
                 </div>
-                <div class="detail-item">
-                    <label>Status:</label>
-                    <span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span>
+                <div class="info-group">
+                    <label>Customer Name:</label>
+                    <span>${order.customerName}</span>
                 </div>
-                <div class="detail-item">
+                <div class="info-group">
+                    <label>Customer Email:</label>
+                    <span>${order.customerEmail}</span>
+                </div>
+                <div class="info-group">
+                    <label>Customer Phone:</label>
+                    <span>${order.customerPhone}</span>
+                </div>
+                <div class="info-group">
                     <label>Service Type:</label>
                     <span>${order.serviceType}</span>
                 </div>
-                <div class="detail-item">
+                <div class="info-group">
+                    <label>Status:</label>
+                    <span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span>
+                </div>
+                <div class="info-group">
                     <label>Price:</label>
-                    <span>$${order.price.toFixed(2)}</span>
+                    <span>$${order.price || 0}</span>
                 </div>
-            </div>
-
-            <div class="detail-section">
-                <h4>Customer Information</h4>
-                <div class="detail-item">
-                    <label>Name:</label>
-                    <span>${order.customerName}</span>
+                <div class="info-group">
+                    <label>Order Date:</label>
+                    <span>${formatDate(orderDate)}</span>
                 </div>
-                <div class="detail-item">
-                    <label>Email:</label>
-                    <span>${order.customerEmail}</span>
+                <div class="info-group">
+                    <label>Estimated Delivery:</label>
+                    <span>${formatDate(estimatedDelivery)}</span>
                 </div>
-                <div class="detail-item">
-                    <label>Phone:</label>
-                    <span>${order.customerPhone}</span>
+                ${actualDelivery ? `
+                <div class="info-group">
+                    <label>Actual Delivery:</label>
+                    <span>${formatDate(actualDelivery)}</span>
                 </div>
-            </div>
-
-            <div class="detail-section">
-                <h4>Package Details</h4>
-                <div class="detail-item">
-                    <label>Weight:</label>
-                    <span>${order.packageDetails.weight}</span>
-                </div>
-                
-                <div class="detail-item">
-                    <label>Description:</label>
-                    <span>${order.packageDetails.description}</span>
-                </div>
-                <div class="detail-item">
-                    <label>Quantity:</label>
-                    <span>${order.packageDetails.quantity}</span>
-                </div>
-            </div>
-
-            <div class="detail-section">
-                <h4>Addresses</h4>
-                <div class="detail-item">
-                    <label>Pickup:</label>
+                ` : ''}
+                <div class="info-group">
+                    <label>Pickup Address:</label>
                     <span>${order.pickupAddress}</span>
                 </div>
-                <div class="detail-item">
-                    <label>Delivery:</label>
+                <div class="info-group">
+                    <label>Delivery Address:</label>
                     <span>${order.deliveryAddress}</span>
                 </div>
-            </div>
-
-            <div class="detail-section">
-                <h4>Timeline</h4>
-                <div class="detail-item">
-                    <label>Created:</label>
-                    <span>${createdDate}</span>
+                <div class="info-group">
+                    <label>Package Weight:</label>
+                    <span>${order.packageDetails.weight} kg</span>
                 </div>
-                <div class="detail-item">
-                    <label>Estimated Delivery:</label>
-                    <span>${estimatedDelivery}</span>
+                <div class="info-group">
+                    <label>Package Description:</label>
+                    <span>${order.packageDetails.description}</span>
                 </div>
-                <div class="detail-item">
-                    <label>Actual Delivery:</label>
-                    <span>${actualDelivery}</span>
+                ${order.specialInstructions ? `
+                <div class="info-group">
+                    <label>Special Instructions:</label>
+                    <span>${order.specialInstructions}</span>
                 </div>
-            </div>
-        </div>
-
-        <div class="timeline-section">
-            <h4>Shipment Progress</h4>
-            <div class="timeline">
-                ${order.stages.map(stage => `
-                    <div class="timeline-item">
-                        <div class="timeline-marker"></div>
-                        <div class="timeline-content">
-                            <div class="timeline-header">
-                                <h5>${stage.stage}</h5>
-                                <span class="timeline-date">${new Date(stage.timestamp).toLocaleString()}</span>
-                            </div>
-                            <p class="timeline-location">${stage.location}</p>
-                            <p class="timeline-description">${stage.description}</p>
-                        </div>
-                    </div>
-                `).join('')}
+                ` : ''}
             </div>
         </div>
     `;
 
-    document.getElementById('detailsModal').style.display = 'flex';
+    modal.style.display = 'flex';
+    
+    // Enhanced mobile modal handling
+    if (window.innerWidth <= 768) {
+        document.body.style.overflow = 'hidden';
+        
+        // Add touch-friendly close functionality
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeDetailsModal();
+            }
+        });
+    }
 }
 
-// Close details modal
+// Enhanced modal close with mobile optimization
 function closeDetailsModal() {
-    document.getElementById('detailsModal').style.display = 'none';
+    const modal = document.getElementById('orderDetailsModal');
+    modal.style.display = 'none';
+    
+    // Restore body scroll on mobile
+    if (window.innerWidth <= 768) {
+        document.body.style.overflow = '';
+    }
 }
 
-// Update order status
+// Enhanced status update with mobile optimization
 function updateOrderStatus(orderId) {
     const order = allOrders.find(o => o.id === orderId);
-    if (!order) return;
+    if (!order) {
+        showNotification('Order not found', 'error');
+        return;
+    }
 
     currentOrderId = orderId;
-    document.getElementById('updateOrderId').textContent = order.id;
-    document.getElementById('updateTrackingNumber').textContent = order.trackingNumber;
-    document.getElementById('newStatus').value = '';
-
-    // Prefill location and description from the latest stage if available
-    let lastStage = order.stages && order.stages.length > 0 ? order.stages[order.stages.length - 1] : null;
-    document.getElementById('updateLocation').value = lastStage && lastStage.location ? lastStage.location : '';
-    document.getElementById('updateDescription').value = lastStage && lastStage.description ? lastStage.description : '';
-
-    document.getElementById('updateModal').style.display = 'flex';
+    
+    const modal = document.getElementById('updateStatusModal');
+    const statusSelect = document.getElementById('newStatus');
+    
+    statusSelect.value = order.status;
+    modal.style.display = 'flex';
+    
+    // Enhanced mobile modal handling
+    if (window.innerWidth <= 768) {
+        document.body.style.overflow = 'hidden';
+        
+        // Add touch-friendly close functionality
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeUpdateModal();
+            }
+        });
+    }
 }
 
-// Close update modal
+// Enhanced update modal close with mobile optimization
 function closeUpdateModal() {
-    document.getElementById('updateModal').style.display = 'none';
-    currentOrderId = null;
+    const modal = document.getElementById('updateStatusModal');
+    modal.style.display = 'none';
+    
+    // Restore body scroll on mobile
+    if (window.innerWidth <= 768) {
+        document.body.style.overflow = '';
+    }
 }
 
-// Handle status update
+// Enhanced status update handling with mobile optimization
 async function handleStatusUpdate(e) {
     e.preventDefault();
-
+    
     const newStatus = document.getElementById('newStatus').value;
-    const location = document.getElementById('updateLocation').value;
-    const description = document.getElementById('updateDescription').value;
-
-    if (!newStatus || !location || !description) {
-        showNotification('Please fill in all fields.', 'error');
+    const order = allOrders.find(o => o.id === currentOrderId);
+    
+    if (!order) {
+        showNotification('Order not found', 'error');
         return;
     }
 
     try {
+        showLoadingIndicator();
+        
         // Use backend API to update order status
-        const response = await api.updateOrderStatus(currentOrderId, {
-            status: newStatus,
-            location: location,
-            description: description
-        });
-
+        const response = await api.updateOrderStatus(currentOrderId, { status: newStatus });
+        
         if (response.success) {
-            // Always reload orders from backend after update
-            await loadOrders();
-            await updateDashboardStats();
+            // Update local order
+            order.status = newStatus;
+            
+            // Update filtered orders
+            const filteredOrder = filteredOrders.find(o => o.id === currentOrderId);
+            if (filteredOrder) {
+                filteredOrder.status = newStatus;
+            }
+            
+            // Re-render table
             renderOrdersTable();
+            
+            // Update stats
+            await updateDashboardStats();
+            
             closeUpdateModal();
-            showNotification('Order status updated successfully!', 'success');
+            showNotification('Order status updated successfully', 'success');
+        } else {
+            showNotification('Failed to update order status', 'error');
         }
-
+        
+        hideLoadingIndicator();
     } catch (error) {
         console.error('Error updating order status:', error);
+        hideLoadingIndicator();
         showNotification('Error updating order status. Please try again.', 'error');
     }
 }
 
-// Delete order
+// Enhanced order deletion with mobile optimization
 function deleteOrder(orderId) {
     const order = allOrders.find(o => o.id === orderId);
-    if (!order) return;
+    if (!order) {
+        showNotification('Order not found', 'error');
+        return;
+    }
 
-    document.getElementById('deleteOrderId').textContent = order.id;
-    document.getElementById('deleteTrackingNumber').textContent = order.trackingNumber;
     currentOrderId = orderId;
-
-    document.getElementById('deleteModal').style.display = 'flex';
+    
+    const modal = document.getElementById('deleteOrderModal');
+    const confirmText = document.getElementById('deleteConfirmText');
+    
+    confirmText.textContent = `Are you sure you want to delete order ${order.trackingNumber}? This action cannot be undone.`;
+    modal.style.display = 'flex';
+    
+    // Enhanced mobile modal handling
+    if (window.innerWidth <= 768) {
+        document.body.style.overflow = 'hidden';
+        
+        // Add touch-friendly close functionality
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeDeleteModal();
+            }
+        });
+    }
 }
 
-// Close delete modal
+// Enhanced delete modal close with mobile optimization
 function closeDeleteModal() {
-    document.getElementById('deleteModal').style.display = 'none';
-    currentOrderId = null;
+    const modal = document.getElementById('deleteOrderModal');
+    modal.style.display = 'none';
+    
+    // Restore body scroll on mobile
+    if (window.innerWidth <= 768) {
+        document.body.style.overflow = '';
+    }
 }
 
-// Confirm delete
+// Enhanced delete confirmation with mobile optimization
 async function confirmDelete() {
     try {
+        showLoadingIndicator();
+        
         // Use backend API to delete order
         const response = await api.deleteOrder(currentOrderId);
-
+        
         if (response.success) {
-            // Always reload orders from backend after delete
-            await loadOrders();
-            await updateDashboardStats();
+            // Remove from local arrays
+            allOrders = allOrders.filter(o => o.id !== currentOrderId);
+            filteredOrders = filteredOrders.filter(o => o.id !== currentOrderId);
+            
+            // Re-render table
             renderOrdersTable();
+            
+            // Update stats
+            await updateDashboardStats();
+            
             closeDeleteModal();
-            showNotification('Order deleted successfully!', 'success');
+            showNotification('Order deleted successfully', 'success');
+        } else {
+            showNotification('Failed to delete order', 'error');
         }
-
+        
+        hideLoadingIndicator();
     } catch (error) {
         console.error('Error deleting order:', error);
+        hideLoadingIndicator();
         showNotification('Error deleting order. Please try again.', 'error');
     }
 }
 
-// Export orders
+// Enhanced order export with mobile optimization
 async function exportOrders() {
     try {
-        const statusFilter = document.getElementById('statusFilter').value;
-        const serviceFilter = document.getElementById('serviceFilter').value;
+        showLoadingIndicator();
         
-        const filters = {};
-        if (statusFilter) filters.status = statusFilter;
-        if (serviceFilter) filters.serviceType = serviceFilter;
-
-        await api.exportOrders(filters);
-        showNotification('Orders exported successfully!', 'success');
+        const csvContent = generateCSV(filteredOrders);
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        hideLoadingIndicator();
+        showNotification('Orders exported successfully', 'success');
     } catch (error) {
         console.error('Error exporting orders:', error);
+        hideLoadingIndicator();
         showNotification('Error exporting orders. Please try again.', 'error');
     }
 }
 
-// Generate CSV content
+// Enhanced CSV generation with mobile optimization
 function generateCSV(orders) {
     const headers = [
-        'Order ID',
         'Tracking Number',
         'Customer Name',
         'Customer Email',
@@ -557,34 +713,43 @@ function generateCSV(orders) {
         'Service Type',
         'Status',
         'Price',
-        'Created Date',
+        'Order Date',
         'Estimated Delivery',
-        'Actual Delivery'
+        'Pickup Address',
+        'Delivery Address',
+        'Package Weight',
+        'Package Description'
     ];
 
     const csvRows = [headers.join(',')];
 
     orders.forEach(order => {
+        const orderDate = new Date(order.createdAt);
+        const estimatedDelivery = new Date(order.estimatedDelivery);
+        
         const row = [
-            order.id,
             order.trackingNumber,
             `"${order.customerName}"`,
             order.customerEmail,
             order.customerPhone,
             order.serviceType,
             order.status,
-            order.price,
-            new Date(order.createdAt).toLocaleDateString(),
-            new Date(order.estimatedDelivery).toLocaleDateString(),
-            order.actualDelivery ? new Date(order.actualDelivery).toLocaleDateString() : ''
+            order.price || 0,
+            orderDate.toISOString(),
+            estimatedDelivery.toISOString(),
+            `"${order.pickupAddress}"`,
+            `"${order.deliveryAddress}"`,
+            order.packageDetails.weight,
+            `"${order.packageDetails.description}"`
         ];
+        
         csvRows.push(row.join(','));
     });
 
     return csvRows.join('\n');
 }
 
-// Show loading indicator
+// Enhanced loading indicator with mobile optimization
 function showLoadingIndicator() {
     const loadingIndicator = document.getElementById('loadingIndicator');
     if (loadingIndicator) {
@@ -592,7 +757,6 @@ function showLoadingIndicator() {
     }
 }
 
-// Hide loading indicator
 function hideLoadingIndicator() {
     const loadingIndicator = document.getElementById('loadingIndicator');
     if (loadingIndicator) {
@@ -600,30 +764,29 @@ function hideLoadingIndicator() {
     }
 }
 
-// Update last refresh time
+// Enhanced last refresh time update
 function updateLastRefreshTime() {
     lastUpdateTime = new Date();
     const lastRefreshElement = document.getElementById('lastRefreshTime');
     if (lastRefreshElement) {
-        lastRefreshElement.textContent = lastUpdateTime.toLocaleTimeString();
+        const isMobile = window.innerWidth <= 768;
+        const timeString = isMobile ? 
+            lastUpdateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+            lastUpdateTime.toLocaleTimeString();
+        lastRefreshElement.textContent = timeString;
     }
 }
 
-// Show real-time status
+// Enhanced real-time status update
 function updateRealTimeStatus() {
     const realTimeStatus = document.getElementById('realTimeStatus');
     if (realTimeStatus) {
-        if (isRealTimeEnabled) {
-            realTimeStatus.innerHTML = '<i class="fas fa-circle text-success"></i> Live';
-            realTimeStatus.className = 'real-time-status active';
-        } else {
-            realTimeStatus.innerHTML = '<i class="fas fa-circle text-muted"></i> Paused';
-            realTimeStatus.className = 'real-time-status paused';
-        }
+        realTimeStatus.textContent = isRealTimeEnabled ? 'Enabled' : 'Disabled';
+        realTimeStatus.className = isRealTimeEnabled ? 'status-enabled' : 'status-disabled';
     }
 }
 
-// Notification system
+// Enhanced notification system with mobile optimization
 function showNotification(message, type = 'info') {
     // Remove existing notifications
     const existingNotification = document.querySelector('.notification');
@@ -641,20 +804,23 @@ function showNotification(message, type = 'info') {
         </div>
     `;
     
+    // Mobile-optimized positioning
+    const isMobile = window.innerWidth <= 768;
+    
     // Add styles
     notification.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
+        ${isMobile ? 'bottom: 20px; left: 20px; right: 20px;' : 'top: 20px; right: 20px;'}
         background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
         color: white;
         padding: 1rem 1.5rem;
         border-radius: 10px;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         z-index: 10000;
-        transform: translateX(100%);
+        transform: translateY(${isMobile ? '100%' : '0'}) translateX(${isMobile ? '0' : '100%'});
         transition: transform 0.3s ease;
-        max-width: 400px;
+        max-width: ${isMobile ? 'none' : '400px'};
+        font-size: ${isMobile ? '0.9rem' : '1rem'};
     `;
     
     // Add to page
@@ -662,108 +828,35 @@ function showNotification(message, type = 'info') {
     
     // Animate in
     setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
+        notification.style.transform = 'translateY(0) translateX(0)';
     }, 100);
     
     // Close button functionality
     const closeBtn = notification.querySelector('.notification-close');
     closeBtn.addEventListener('click', () => {
-        notification.style.transform = 'translateX(100%)';
+        notification.style.transform = `translateY(${isMobile ? '100%' : '0'}) translateX(${isMobile ? '0' : '100%'})`;
         setTimeout(() => notification.remove(), 300);
     });
     
     // Auto remove after 5 seconds
     setTimeout(() => {
         if (notification.parentNode) {
-            notification.style.transform = 'translateX(100%)';
+            notification.style.transform = `translateY(${isMobile ? '100%' : '0'}) translateX(${isMobile ? '0' : '100%'})`;
             setTimeout(() => notification.remove(), 300);
         }
     }, 5000);
 }
 
-// Navbar background change on scroll
-window.addEventListener('scroll', () => {
-    const navbar = document.querySelector('.navbar');
-    if (window.scrollY > 100) {
-        navbar.style.background = 'rgba(255, 255, 255, 0.98)';
-        navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
-    } else {
-        navbar.style.background = 'rgba(255, 255, 255, 0.95)';
-        navbar.style.boxShadow = 'none';
-    }
-});
-
-// Close modals when clicking outside
-window.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal')) {
-        e.target.style.display = 'none';
-        currentOrderId = null;
-    }
-});
-
-// Debug function to test API connectivity
-window.debugAPI = async function() {
-    console.log('=== API Debug Test ===');
-    console.log('Admin Token:', localStorage.getItem('adminToken'));
-    console.log('Admin Logged In:', localStorage.getItem('adminLoggedIn'));
-    
-    try {
-        console.log('Testing health check...');
-        const health = await api.healthCheck();
-        console.log('Health check result:', health);
-        
-        console.log('Testing orders API...');
-        const orders = await api.getOrders();
-        console.log('Orders API result:', orders);
-        
-        console.log('Testing dashboard stats...');
-        const stats = await api.getDashboardStats();
-        console.log('Dashboard stats result:', stats);
-        
-        console.log('=== API Debug Test Complete ===');
-    } catch (error) {
-        console.error('API Debug Test Failed:', error);
-    }
-};
-
-// Test authentication flow
-window.testAuth = async function() {
-    console.log('=== Authentication Test ===');
-    
-    // Clear any existing tokens
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminLoggedIn');
-    
-    try {
-        console.log('Testing login...');
-        const loginResult = await api.login('admin@yanglogistics.com', 'Admin123!');
-        console.log('Login result:', loginResult);
-        
-        if (loginResult.success) {
-            console.log('Login successful, testing orders...');
-            const orders = await api.getOrders();
-            console.log('Orders after login:', orders);
-            
-            console.log('Testing stats...');
-            const stats = await api.getDashboardStats();
-            console.log('Stats after login:', stats);
-        }
-        
-        console.log('=== Authentication Test Complete ===');
-    } catch (error) {
-        console.error('Authentication Test Failed:', error);
-    }
-};
-
+// Make functions globally available
 window.viewOrderDetails = viewOrderDetails;
-window.updateOrderStatus = updateOrderStatus;
-window.deleteOrder = deleteOrder;
 window.closeDetailsModal = closeDetailsModal;
+window.updateOrderStatus = updateOrderStatus;
 window.closeUpdateModal = closeUpdateModal;
+window.handleStatusUpdate = handleStatusUpdate;
+window.deleteOrder = deleteOrder;
 window.closeDeleteModal = closeDeleteModal;
 window.confirmDelete = confirmDelete;
+window.exportOrders = exportOrders;
 
-console.log('Admin dashboard loaded successfully!');
-console.log('Use debugAPI() in console to test API connectivity');
-console.log('Use testAuth() in console to test authentication flow');
+console.log('Enhanced Admin Dashboard loaded successfully with mobile optimizations!');
 })(); 

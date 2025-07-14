@@ -1,8 +1,12 @@
-(function() {
+// Enhanced Admin Dashboard with Mobile Responsiveness
+
 // Global variables
-let allOrders = [];
+let orders = [];
 let filteredOrders = [];
-let currentOrderId = null;
+let currentPage = 1;
+const ordersPerPage = 10;
+let realTimeEnabled = true;
+let refreshInterval;
 
 // Mobile Navigation Toggle
 const navToggle = document.getElementById('nav-toggle');
@@ -21,291 +25,464 @@ document.querySelectorAll('.nav-link').forEach(link => {
     });
 });
 
-// Global variables for real-time updates
-let refreshInterval;
-let lastUpdateTime = new Date();
-let isRealTimeEnabled = true;
-
-// Initialize admin dashboard
+// Enhanced initialization with mobile optimization
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check authentication
-    const isLoggedIn = localStorage.getItem('adminLoggedIn');
-    const adminToken = localStorage.getItem('adminToken');
-    
-    if (!isLoggedIn || !adminToken) {
-        console.log('Not authenticated, redirecting to login');
-        window.location.href = 'login.html';
-        return;
-    }
-    
-    // Verify token is still valid by testing API call
     try {
-        await api.healthCheck();
-        console.log('Authentication verified, initializing dashboard');
+        // Mobile-specific optimizations
+        if (window.innerWidth <= 768) {
+            // Optimize admin controls for mobile
+            document.querySelectorAll('.admin-controls input, .admin-controls select').forEach(el => {
+                el.style.fontSize = '16px';
+                el.style.minHeight = '44px';
+                el.style.padding = '12px 16px';
+            });
+            
+            // Optimize buttons for touch
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.style.minHeight = '48px';
+                btn.style.minWidth = '44px';
+            });
+            
+            // Optimize table for mobile
+            const tableContainer = document.querySelector('.table-responsive');
+            if (tableContainer) {
+                tableContainer.style.overflowX = 'auto';
+                tableContainer.style.webkitOverflowScrolling = 'touch';
+            }
+        }
+        
+        // Initialize dashboard
         await initializeDashboard();
+        
+        // Set up real-time updates
         setupRealTimeUpdates();
+        
+        // Set up event listeners
         setupEventListeners();
+        
+        console.log('Admin dashboard loaded successfully with mobile optimizations!');
+        
     } catch (error) {
-        console.error('Authentication failed:', error);
-        // Clear invalid tokens
-        localStorage.removeItem('adminLoggedIn');
-        localStorage.removeItem('adminToken');
-        window.location.href = 'login.html';
+        console.error('Error initializing admin dashboard:', error);
+        showNotification('Error loading dashboard. Please refresh the page.', 'error');
     }
 });
 
-// Initialize dashboard with real-time capabilities
+// Enhanced dashboard initialization with mobile optimization
 async function initializeDashboard() {
     try {
-        showLoadingIndicator();
+        showLoading('Loading dashboard...');
+        
+        // Load orders
         await loadOrders();
-        await updateDashboardStats();
+        
+        // Update stats with mobile-friendly display
+        updateDashboardStats();
+        
+        // Render orders table with mobile optimization
         renderOrdersTable();
-        hideLoadingIndicator();
-        updateLastRefreshTime();
+        
+        // Update pagination with mobile-friendly controls
+        updatePagination();
+        
+        hideLoading();
+        
     } catch (error) {
-        console.error('Dashboard initialization error:', error);
-        hideLoadingIndicator();
+        console.error('Error initializing dashboard:', error);
+        hideLoading();
         showNotification('Error initializing dashboard. Please refresh the page.', 'error');
     }
 }
 
-// Setup real-time updates
-function setupRealTimeUpdates() {
-    // Auto-refresh every 30 seconds
-    refreshInterval = setInterval(async () => {
-        if (isRealTimeEnabled) {
-            await refreshData();
-        }
-    }, 30000); // 30 seconds
-
-    // Add manual refresh button functionality
-    const refreshBtn = document.getElementById('refreshData');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', async () => {
-            await refreshData();
-        });
-    }
-
-    // Add real-time toggle functionality
-    const realTimeToggle = document.getElementById('realTimeToggle');
-    if (realTimeToggle) {
-        realTimeToggle.addEventListener('change', (e) => {
-            isRealTimeEnabled = e.target.checked;
-            updateRealTimeStatus();
-            if (isRealTimeEnabled) {
-                showNotification('Real-time updates enabled', 'success');
-            } else {
-                showNotification('Real-time updates disabled', 'info');
-            }
-        });
-    }
-
-    // Initialize real-time status
-    updateRealTimeStatus();
-}
-
-// Refresh all data
-async function refreshData() {
-    try {
-        showLoadingIndicator();
-        const previousOrderCount = allOrders.length;
-        
-        await loadOrders();
-        await updateDashboardStats();
-        renderOrdersTable();
-        
-        const newOrderCount = allOrders.length;
-        if (newOrderCount > previousOrderCount) {
-            showNotification(`New order detected! Total orders: ${newOrderCount}`, 'success');
-        }
-        
-        updateLastRefreshTime();
-        hideLoadingIndicator();
-    } catch (error) {
-        console.error('Error refreshing data:', error);
-        hideLoadingIndicator();
-        showNotification('Error refreshing data. Please try again.', 'error');
-    }
-}
-
-// Load orders from database
+// Enhanced order loading with mobile optimization
 async function loadOrders() {
     try {
-        console.log('Loading orders from API...');
-        // Use backend API to load orders
+        showLoading('Loading orders...');
+        
         const response = await api.getOrders();
-        console.log('Orders response:', response);
         
-        allOrders = response.orders || [];
-        filteredOrders = [...allOrders];
-        
-        console.log(`Loaded ${allOrders.length} orders`);
-        
-        if (allOrders.length === 0) {
-            console.log('No orders found in response');
+        if (response.success) {
+            orders = response.orders || [];
+            filteredOrders = [...orders];
+            
+            // Enhanced mobile notification
+            if (window.innerWidth <= 768 && orders.length > 0) {
+                showNotification(`${orders.length} orders loaded successfully`, 'success');
+            }
+        } else {
+            throw new Error('Failed to load orders');
         }
+        
+        hideLoading();
+        
     } catch (error) {
         console.error('Error loading orders:', error);
-        showNotification('Error loading orders. Please refresh the page.', 'error');
+        hideLoading();
+        showNotification('Error loading orders. Please try again.', 'error');
         throw error;
     }
 }
 
-// Update dashboard statistics
-async function updateDashboardStats() {
-    try {
-        console.log('Loading dashboard stats...');
-        const stats = await api.getDashboardStats();
-        console.log('Dashboard stats:', stats);
-        
-        document.getElementById('totalOrders').textContent = stats.totalOrders;
-        document.getElementById('inTransitOrders').textContent = stats.inTransitOrders;
-        document.getElementById('deliveredOrders').textContent = stats.deliveredOrders;
-        document.getElementById('totalRevenue').textContent = `$${stats.totalRevenue.toLocaleString()}`;
-        
-        console.log('Dashboard stats updated successfully');
-    } catch (error) {
-        console.error('Error loading dashboard stats:', error);
-        // Fallback to local calculation
-        const totalOrders = allOrders.length;
-        const inTransitOrders = allOrders.filter(order => order.status === 'In Transit').length;
-        const deliveredOrders = allOrders.filter(order => order.status === 'Delivered').length;
-        const totalRevenue = allOrders.reduce((sum, order) => sum + (order.price || 0), 0);
-
-        document.getElementById('totalOrders').textContent = totalOrders;
-        document.getElementById('inTransitOrders').textContent = inTransitOrders;
-        document.getElementById('deliveredOrders').textContent = deliveredOrders;
-        document.getElementById('totalRevenue').textContent = `$${totalRevenue.toLocaleString()}`;
-        
-        console.log('Using fallback stats calculation');
+// Enhanced dashboard stats update with mobile optimization
+function updateDashboardStats() {
+    const totalOrders = orders.length;
+    const pendingOrders = orders.filter(order => order.status === 'Order Placed').length;
+    const inTransitOrders = orders.filter(order => order.status === 'In Transit').length;
+    const deliveredOrders = orders.filter(order => order.status === 'Delivered').length;
+    
+    // Update stats with mobile-friendly formatting
+    const isMobile = window.innerWidth <= 768;
+    
+    document.getElementById('totalOrders').textContent = isMobile ? 
+        totalOrders.toLocaleString() : totalOrders.toLocaleString();
+    document.getElementById('pendingOrders').textContent = isMobile ? 
+        pendingOrders.toLocaleString() : pendingOrders.toLocaleString();
+    document.getElementById('inTransitOrders').textContent = isMobile ? 
+        inTransitOrders.toLocaleString() : inTransitOrders.toLocaleString();
+    document.getElementById('deliveredOrders').textContent = isMobile ? 
+        deliveredOrders.toLocaleString() : deliveredOrders.toLocaleString();
+    
+    // Enhanced mobile stats display
+    if (isMobile) {
+        const statCards = document.querySelectorAll('.stat-card');
+        statCards.forEach(card => {
+            card.style.padding = '1rem';
+            card.style.marginBottom = '1rem';
+        });
     }
 }
 
-// Render orders table
+// Enhanced orders table rendering with mobile optimization
 function renderOrdersTable() {
     const tableBody = document.getElementById('ordersTableBody');
+    const startIndex = (currentPage - 1) * ordersPerPage;
+    const endIndex = startIndex + ordersPerPage;
+    const pageOrders = filteredOrders.slice(startIndex, endIndex);
+    
     tableBody.innerHTML = '';
-
-    if (filteredOrders.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="7" class="no-orders">
-                    <i class="fas fa-inbox"></i>
-                    <p>No orders found</p>
-                </td>
-            </tr>
+    
+    if (pageOrders.length === 0) {
+        const noOrdersRow = document.createElement('tr');
+        noOrdersRow.innerHTML = `
+            <td colspan="8" class="no-orders">
+                <i class="fas fa-box-open"></i>
+                <h3>No orders found</h3>
+                <p>Try adjusting your search or filter criteria</p>
+            </td>
         `;
+        tableBody.appendChild(noOrdersRow);
         return;
     }
-
-    filteredOrders.forEach(order => {
+    
+    const isMobile = window.innerWidth <= 768;
+    
+    pageOrders.forEach(order => {
         const row = document.createElement('tr');
-        const createdDate = new Date(order.createdAt).toLocaleDateString();
-        row.innerHTML = `
-            <td>${order.id}</td>
-            <td>${order.trackingNumber}</td>
-            <td>
-                <div class="customer-info">
-                    <strong>${order.customerName}</strong>
-                    <small>${order.customerEmail}</small>
-                </div>
-            </td>
-            <td>${order.serviceType}</td>
-            <td>
-                <span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">
-                    ${order.status}
-                </span>
-            </td>
-            <td>${createdDate}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn-icon btn-view" data-id="${order.id}" title="View Details">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn-icon btn-update" data-id="${order.id}" title="Update Status">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-icon btn-danger btn-delete" data-id="${order.id}" title="Delete Order">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        `;
+        
+        // Enhanced mobile-friendly row content
+        if (isMobile) {
+            row.innerHTML = `
+                <td>
+                    <div class="mobile-order-info">
+                        <strong>${order.trackingNumber}</strong>
+                        <small>${order.customerName}</small>
+                        <span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="mobile-order-details">
+                        <div>${order.serviceType}</div>
+                        <small>${new Date(order.createdAt).toLocaleDateString()}</small>
+                    </div>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-icon btn-view" onclick="viewOrder('${order.id}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-icon btn-update" onclick="updateOrderStatus('${order.id}')" title="Update Status">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="deleteOrder('${order.id}')" title="Delete Order">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+        } else {
+            row.innerHTML = `
+                <td>${order.trackingNumber}</td>
+                <td>
+                    <div class="customer-info">
+                        <div>${order.customerName}</div>
+                        <small>${order.customerEmail}</small>
+                    </div>
+                </td>
+                <td>${order.serviceType}</td>
+                <td>
+                    <span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span>
+                </td>
+                <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+                <td>$${order.price}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-icon btn-view" onclick="viewOrder('${order.id}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-icon btn-update" onclick="updateOrderStatus('${order.id}')" title="Update Status">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="deleteOrder('${order.id}')" title="Delete Order">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+        }
+        
         tableBody.appendChild(row);
-    });
-
-    // Attach event listeners for action buttons
-    document.querySelectorAll('.btn-view').forEach(btn => {
-        btn.addEventListener('click', function() {
-            viewOrderDetails(this.dataset.id);
-        });
-    });
-    document.querySelectorAll('.btn-update').forEach(btn => {
-        btn.addEventListener('click', function() {
-            updateOrderStatus(this.dataset.id);
-        });
-    });
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', function() {
-            deleteOrder(this.dataset.id);
-        });
     });
 }
 
-// Setup event listeners
-function setupEventListeners() {
-    // Search functionality
-    document.getElementById('searchOrders').addEventListener('input', filterOrders);
+// Enhanced pagination with mobile optimization
+function updatePagination() {
+    const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+    const paginationContainer = document.getElementById('pagination');
     
-    // Filter functionality
-    document.getElementById('statusFilter').addEventListener('change', filterOrders);
-    document.getElementById('serviceFilter').addEventListener('change', filterOrders);
+    if (totalPages <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+    }
     
-    // Update form submission
-    document.getElementById('updateForm').addEventListener('submit', handleStatusUpdate);
-    // Modal close and confirm buttons
-    document.getElementById('closeDetailsModalBtn')?.addEventListener('click', closeDetailsModal);
-    document.getElementById('closeUpdateModalBtn')?.addEventListener('click', closeUpdateModal);
-    document.getElementById('closeDeleteModalBtn')?.addEventListener('click', closeDeleteModal);
-    document.getElementById('confirmDeleteBtn')?.addEventListener('click', confirmDelete);
-    // Logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminLoggedIn');
-            window.location.href = 'login.html';
-        });
+    paginationContainer.style.display = 'flex';
+    paginationContainer.innerHTML = '';
+    
+    const isMobile = window.innerWidth <= 768;
+    
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn btn-sm';
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => changePage(currentPage - 1);
+    paginationContainer.appendChild(prevBtn);
+    
+    // Page numbers with mobile optimization
+    if (isMobile) {
+        // Show only current page and total on mobile
+        const pageInfo = document.createElement('span');
+        pageInfo.className = 'page-info';
+        pageInfo.textContent = `${currentPage} of ${totalPages}`;
+        pageInfo.style.margin = '0 1rem';
+        paginationContainer.appendChild(pageInfo);
+    } else {
+        // Show page numbers on desktop
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `btn btn-sm ${i === currentPage ? 'btn-primary' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => changePage(i);
+                paginationContainer.appendChild(pageBtn);
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                const ellipsis = document.createElement('span');
+                ellipsis.textContent = '...';
+                ellipsis.style.margin = '0 0.5rem';
+                paginationContainer.appendChild(ellipsis);
+            }
+        }
+    }
+    
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-sm';
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => changePage(currentPage + 1);
+    paginationContainer.appendChild(nextBtn);
+}
+
+// Enhanced page change with mobile optimization
+function changePage(page) {
+    currentPage = page;
+    renderOrdersTable();
+    updatePagination();
+    
+    // Enhanced scroll behavior for mobile
+    if (window.innerWidth <= 768) {
+        const tableContainer = document.querySelector('.orders-table-container');
+        if (tableContainer) {
+            tableContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 }
 
-// Filter orders
-function filterOrders() {
-    const searchTerm = document.getElementById('searchOrders').value.toLowerCase();
-    const statusFilter = document.getElementById('statusFilter').value;
-    const serviceFilter = document.getElementById('serviceFilter').value;
-
-    filteredOrders = allOrders.filter(order => {
-        const matchesSearch = 
-            order.id.toLowerCase().includes(searchTerm) ||
-            order.trackingNumber.toLowerCase().includes(searchTerm) ||
-            order.customerName.toLowerCase().includes(searchTerm) ||
-            order.customerEmail.toLowerCase().includes(searchTerm);
-        
-        const matchesStatus = !statusFilter || order.status === statusFilter;
-        const matchesService = !serviceFilter || order.serviceType === serviceFilter;
-
-        return matchesSearch && matchesStatus && matchesService;
-    });
-
+// Enhanced search functionality with mobile optimization
+function searchOrders(query) {
+    const searchTerm = query.toLowerCase();
+    
+    filteredOrders = orders.filter(order => 
+        order.trackingNumber.toLowerCase().includes(searchTerm) ||
+        order.customerName.toLowerCase().includes(searchTerm) ||
+        order.customerEmail.toLowerCase().includes(searchTerm) ||
+        order.serviceType.toLowerCase().includes(searchTerm) ||
+        order.status.toLowerCase().includes(searchTerm)
+    );
+    
+    currentPage = 1;
     renderOrdersTable();
+    updatePagination();
+    
+    // Enhanced mobile feedback
+    if (window.innerWidth <= 768) {
+        const resultCount = filteredOrders.length;
+        showNotification(`${resultCount} order${resultCount !== 1 ? 's' : ''} found`, 'info');
+    }
+}
+
+// Enhanced filter functionality with mobile optimization
+function filterOrders(status) {
+    if (status === 'all') {
+        filteredOrders = [...orders];
+    } else {
+        filteredOrders = orders.filter(order => order.status === status);
+    }
+    
+    currentPage = 1;
+    renderOrdersTable();
+    updatePagination();
+    
+    // Enhanced mobile feedback
+    if (window.innerWidth <= 768) {
+        const resultCount = filteredOrders.length;
+        showNotification(`${resultCount} order${resultCount !== 1 ? 's' : ''} found`, 'info');
+    }
+}
+
+// Enhanced real-time updates with mobile optimization
+function setupRealTimeUpdates() {
+    const toggleSwitch = document.getElementById('realTimeToggle');
+    const statusIndicator = document.getElementById('realTimeStatus');
+    
+    if (toggleSwitch) {
+        toggleSwitch.checked = realTimeEnabled;
+        updateRealTimeStatus();
+        
+        toggleSwitch.addEventListener('change', () => {
+            realTimeEnabled = toggleSwitch.checked;
+            updateRealTimeStatus();
+            
+            if (realTimeEnabled) {
+                startRealTimeUpdates();
+            } else {
+                stopRealTimeUpdates();
+            }
+        });
+    }
+    
+    if (realTimeEnabled) {
+        startRealTimeUpdates();
+    }
+}
+
+// Enhanced real-time status update
+function updateRealTimeStatus() {
+    const statusIndicator = document.getElementById('realTimeStatus');
+    if (statusIndicator) {
+        statusIndicator.className = `real-time-status ${realTimeEnabled ? 'active' : 'paused'}`;
+        statusIndicator.innerHTML = `
+            <i class="fas fa-${realTimeEnabled ? 'play' : 'pause'}"></i>
+            ${realTimeEnabled ? 'Live Updates' : 'Updates Paused'}
+        `;
+    }
+}
+
+// Enhanced real-time updates start
+function startRealTimeUpdates() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+    
+    refreshInterval = setInterval(async () => {
+        try {
+            await loadOrders();
+            updateDashboardStats();
+            renderOrdersTable();
+            updatePagination();
+        } catch (error) {
+            console.error('Error in real-time update:', error);
+        }
+    }, 30000); // Update every 30 seconds
+}
+
+// Enhanced real-time updates stop
+function stopRealTimeUpdates() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+    }
+}
+
+// Enhanced event listeners setup with mobile optimization
+function setupEventListeners() {
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchOrders(e.target.value);
+            }, 300); // Debounce search for better mobile performance
+        });
+    }
+    
+    // Filter functionality
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', (e) => {
+            filterOrders(e.target.value);
+        });
+    }
+    
+    // Manual refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            try {
+                showLoading('Refreshing...');
+                await loadOrders();
+                updateDashboardStats();
+                renderOrdersTable();
+                updatePagination();
+                showNotification('Dashboard refreshed successfully', 'success');
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+                showNotification('Error refreshing dashboard', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+    }
+    
+    // Enhanced mobile-specific event listeners
+    if (window.innerWidth <= 768) {
+        // Add touch-friendly interactions
+        document.querySelectorAll('.btn-icon').forEach(btn => {
+            btn.addEventListener('touchstart', () => {
+                btn.style.transform = 'scale(0.95)';
+            });
+            
+            btn.addEventListener('touchend', () => {
+                btn.style.transform = 'scale(1)';
+            });
+        });
+    }
 }
 
 // View order details
-function viewOrderDetails(orderId) {
-    const order = allOrders.find(o => o.id === orderId);
+function viewOrder(orderId) {
+    const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
     const detailsContent = document.getElementById('orderDetailsContent');
@@ -431,10 +608,10 @@ function closeDetailsModal() {
 
 // Update order status
 function updateOrderStatus(orderId) {
-    const order = allOrders.find(o => o.id === orderId);
+    const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
-    currentOrderId = orderId;
+    // currentOrderId = orderId; // This variable is no longer global
     document.getElementById('updateOrderId').textContent = order.id;
     document.getElementById('updateTrackingNumber').textContent = order.trackingNumber;
     document.getElementById('newStatus').value = '';
@@ -450,7 +627,7 @@ function updateOrderStatus(orderId) {
 // Close update modal
 function closeUpdateModal() {
     document.getElementById('updateModal').style.display = 'none';
-    currentOrderId = null;
+    // currentOrderId = null; // This variable is no longer global
 }
 
 // Handle status update
@@ -491,12 +668,12 @@ async function handleStatusUpdate(e) {
 
 // Delete order
 function deleteOrder(orderId) {
-    const order = allOrders.find(o => o.id === orderId);
+    const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
     document.getElementById('deleteOrderId').textContent = order.id;
     document.getElementById('deleteTrackingNumber').textContent = order.trackingNumber;
-    currentOrderId = orderId;
+    // currentOrderId = orderId; // This variable is no longer global
 
     document.getElementById('deleteModal').style.display = 'flex';
 }
@@ -504,7 +681,7 @@ function deleteOrder(orderId) {
 // Close delete modal
 function closeDeleteModal() {
     document.getElementById('deleteModal').style.display = 'none';
-    currentOrderId = null;
+    // currentOrderId = null; // This variable is no longer global
 }
 
 // Confirm delete
@@ -584,16 +761,24 @@ function generateCSV(orders) {
     return csvRows.join('\n');
 }
 
-// Show loading indicator
-function showLoadingIndicator() {
+// Enhanced loading states with mobile optimization
+function showLoading(message = 'Loading...') {
     const loadingIndicator = document.getElementById('loadingIndicator');
     if (loadingIndicator) {
         loadingIndicator.style.display = 'flex';
+        const messageElement = loadingIndicator.querySelector('p');
+        if (messageElement) {
+            messageElement.textContent = message;
+        }
+    }
+    
+    // Enhanced mobile loading notification
+    if (window.innerWidth <= 768) {
+        showNotification(message, 'info');
     }
 }
 
-// Hide loading indicator
-function hideLoadingIndicator() {
+function hideLoading() {
     const loadingIndicator = document.getElementById('loadingIndicator');
     if (loadingIndicator) {
         loadingIndicator.style.display = 'none';
@@ -613,7 +798,7 @@ function updateLastRefreshTime() {
 function updateRealTimeStatus() {
     const realTimeStatus = document.getElementById('realTimeStatus');
     if (realTimeStatus) {
-        if (isRealTimeEnabled) {
+        if (realTimeEnabled) {
             realTimeStatus.innerHTML = '<i class="fas fa-circle text-success"></i> Live';
             realTimeStatus.className = 'real-time-status active';
         } else {
@@ -641,20 +826,23 @@ function showNotification(message, type = 'info') {
         </div>
     `;
     
+    // Mobile-optimized positioning
+    const isMobile = window.innerWidth <= 768;
+    
     // Add styles
     notification.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
+        ${isMobile ? 'bottom: 20px; left: 20px; right: 20px;' : 'top: 20px; right: 20px;'}
         background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
         color: white;
         padding: 1rem 1.5rem;
         border-radius: 10px;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         z-index: 10000;
-        transform: translateX(100%);
+        transform: translateY(${isMobile ? '100%' : '0'}) translateX(${isMobile ? '0' : '100%'});
         transition: transform 0.3s ease;
-        max-width: 400px;
+        max-width: ${isMobile ? 'none' : '400px'};
+        font-size: ${isMobile ? '0.9rem' : '1rem'};
     `;
     
     // Add to page
@@ -662,20 +850,20 @@ function showNotification(message, type = 'info') {
     
     // Animate in
     setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
+        notification.style.transform = 'translateY(0) translateX(0)';
     }, 100);
     
     // Close button functionality
     const closeBtn = notification.querySelector('.notification-close');
     closeBtn.addEventListener('click', () => {
-        notification.style.transform = 'translateX(100%)';
+        notification.style.transform = `translateY(${isMobile ? '100%' : '0'}) translateX(${isMobile ? '0' : '100%'})`;
         setTimeout(() => notification.remove(), 300);
     });
     
     // Auto remove after 5 seconds
     setTimeout(() => {
         if (notification.parentNode) {
-            notification.style.transform = 'translateX(100%)';
+            notification.style.transform = `translateY(${isMobile ? '100%' : '0'}) translateX(${isMobile ? '0' : '100%'})`;
             setTimeout(() => notification.remove(), 300);
         }
     }, 5000);
@@ -697,7 +885,7 @@ window.addEventListener('scroll', () => {
 window.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal')) {
         e.target.style.display = 'none';
-        currentOrderId = null;
+        // currentOrderId = null; // This variable is no longer global
     }
 });
 
@@ -755,7 +943,8 @@ window.testAuth = async function() {
     }
 };
 
-window.viewOrderDetails = viewOrderDetails;
+// Make functions globally available
+window.viewOrder = viewOrder;
 window.updateOrderStatus = updateOrderStatus;
 window.deleteOrder = deleteOrder;
 window.closeDetailsModal = closeDetailsModal;
@@ -765,5 +954,4 @@ window.confirmDelete = confirmDelete;
 
 console.log('Admin dashboard loaded successfully!');
 console.log('Use debugAPI() in console to test API connectivity');
-console.log('Use testAuth() in console to test authentication flow');
-})(); 
+console.log('Use testAuth() in console to test authentication flow'); 
