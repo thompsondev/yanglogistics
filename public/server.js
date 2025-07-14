@@ -26,6 +26,27 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Serve static files
 app.use(express.static(path.join(__dirname)));
 
+// URL rewriting middleware to remove .html extensions
+app.use((req, res, next) => {
+    const url = req.url;
+    
+    // If the URL doesn't end with .html and doesn't have a file extension
+    if (!url.includes('.') && !url.endsWith('/')) {
+        // Check if the file exists with .html extension
+        const htmlPath = path.join(__dirname, url + '.html');
+        if (fs.existsSync(htmlPath)) {
+            req.url = url + '.html';
+        }
+    }
+    
+    // Handle root URL
+    if (url === '/') {
+        req.url = '/index.html';
+    }
+    
+    next();
+});
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
