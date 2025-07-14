@@ -109,7 +109,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(51, 65, 85, 0.8) 50%, rgba(71, 85, 105, 0.7) 100%);
     color: white;
     position: relative;
     overflow: hidden;
@@ -122,8 +122,20 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('../01b975f1598127ca927e667d4181c685.png') center/cover;
-    opacity: 0.05;
+    background: url('sample/01b975f1598127ca927e667d4181c685.png') center/cover;
+    opacity: 0.2;
+    z-index: 1;
+    filter: brightness(0.4) contrast(1.1);
+}
+
+.hero::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.1) 100%);
     z-index: 1;
 }
 
@@ -133,11 +145,23 @@ body {
     padding: 0 60px;
     text-align: left;
     position: relative;
-    z-index: 2;
+    z-index: 3;
 }
 
 .hero-content {
     animation: fadeInLeft 1s ease-out;
+    position: relative;
+}
+
+.hero-content::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    width: 4px;
+    height: 80px;
+    background: linear-gradient(180deg, #3b82f6, #60a5fa);
+    border-radius: 2px;
 }
 
 /* Hero Badge */
@@ -1486,6 +1510,15 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .hero::before {
+        background-position: center center;
+        background-size: cover;
+    }
+    
+    .hero-content::before {
+        display: none;
+    }
+    
     .nav-menu {
         position: fixed;
         left: -100%;
