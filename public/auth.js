@@ -1,5 +1,17 @@
 // Enhanced Authentication with Mobile Responsiveness
 
+// Check if already logged in and redirect
+document.addEventListener('DOMContentLoaded', () => {
+    const isLoggedIn = localStorage.getItem('adminLoggedIn');
+    const adminToken = localStorage.getItem('adminToken');
+    
+    // If on login page and already authenticated, redirect to admin
+    if (window.location.pathname.includes('login.html') && isLoggedIn && adminToken) {
+        window.location.href = 'admin.html';
+        return;
+    }
+});
+
 // Form elements
 const loginForm = document.getElementById('loginForm');
 const signupForm = document.getElementById('signupForm');
@@ -27,6 +39,8 @@ if (loginForm) {
             console.log('Login response:', response);
             
             if (response.success) {
+                // Set authentication flags
+                localStorage.setItem('adminLoggedIn', 'true');
                 showNotification('Login successful! Redirecting...', 'success');
                 
                 // Enhanced redirect with mobile optimization
@@ -41,6 +55,10 @@ if (loginForm) {
             
         } catch (error) {
             console.error('Login error:', error);
+            // Clear any existing authentication data on error
+            localStorage.removeItem('adminLoggedIn');
+            localStorage.removeItem('adminToken');
+            api.clearToken();
             showNotification('Login failed. Please check your connection and try again.', 'error');
             hideLoading();
         }

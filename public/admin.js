@@ -57,6 +57,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
+    // Setup logout functionality
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
+    }
+    
     // Verify token is still valid by testing API call
     try {
         await api.healthCheck();
@@ -71,10 +80,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         console.error('Authentication failed:', error);
-        // Clear invalid tokens
-        localStorage.removeItem('adminLoggedIn');
-        localStorage.removeItem('adminToken');
-        window.location.href = 'login.html';
+        // Clear invalid tokens and redirect
+        logout();
     }
 });
 
@@ -107,6 +114,17 @@ function initializeMobileOptimizations() {
     
     // Add mobile-specific event listeners
     setupMobileEventListeners();
+}
+
+// Logout function
+function logout() {
+    // Clear authentication data
+    localStorage.removeItem('adminLoggedIn');
+    localStorage.removeItem('adminToken');
+    api.clearToken();
+    
+    // Redirect to login page
+    window.location.href = 'login.html';
 }
 
 // Enhanced mobile event listeners
