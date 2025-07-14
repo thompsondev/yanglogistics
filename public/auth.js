@@ -22,7 +22,9 @@ if (loginForm) {
             }
             
             // Enhanced login with mobile optimization
+            console.log('Login data being sent:', loginData);
             const response = await api.login(loginData);
+            console.log('Login response:', response);
             
             if (response.success) {
                 showNotification('Login successful! Redirecting...', 'success');

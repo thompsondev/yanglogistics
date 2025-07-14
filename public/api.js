@@ -57,11 +57,13 @@ class LogisticsAPI {
     }
 
     // Authentication methods
-    async login(email, password) {
+    async login(loginData) {
+        console.log('API login called with:', loginData);
         const response = await this.request('/auth/login', {
             method: 'POST',
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify(loginData)
         });
+        console.log('API login response:', response);
 
         if (response.success && response.token) {
             this.setToken(response.token);

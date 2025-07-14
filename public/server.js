@@ -128,17 +128,26 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'OK', message: 'Server is running' });
+});
+
 // Authentication routes
 app.post('/api/auth/login', async (req, res) => {
     try {
+        console.log('Login request received:', req.body);
         const { email, password } = req.body;
         
         if (!email || !password) {
+            console.log('Missing email or password:', { email: !!email, password: !!password });
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
         const db = await readDatabase();
+        console.log('Available admin accounts:', db.adminAccounts.map(acc => ({ email: acc.email, id: acc.id })));
         const admin = db.adminAccounts.find(acc => acc.email.toLowerCase() === email.toLowerCase());
+        console.log('Found admin:', admin ? { email: admin.email, id: admin.id } : 'Not found');
 
         if (!admin) {
             return res.status(401).json({ error: 'Invalid credentials' });
