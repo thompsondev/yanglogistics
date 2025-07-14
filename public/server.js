@@ -282,6 +282,11 @@ app.post('/api/orders', async (req, res) => {
             }
         }
 
+        // Validate packageDetails
+        if (!orderData.packageDetails.weight || isNaN(parseFloat(orderData.packageDetails.weight))) {
+            return res.status(400).json({ error: 'Invalid or missing weight.' });
+        }
+
         // Create new order
         const newOrder = {
             id: generateOrderId(),

@@ -272,14 +272,26 @@ app.post('/api/orders', async (req, res) => {
             pickupAddress,
             deliveryAddress,
             serviceType,
-            weight,
-            description,
+            packageDetails,
             specialInstructions
         } = req.body;
 
         if (!customerName || !customerEmail || !customerPhone || !pickupAddress || !deliveryAddress || !serviceType) {
             return res.status(400).json({ error: 'Required fields are missing' });
         }
+        
+        // Handle both old format (direct weight) and new format (packageDetails)
+        let weight, description, quantity;
+        if (packageDetails) {
+            weight = packageDetails.weight;
+            description = packageDetails.description;
+            quantity = packageDetails.quantity;
+        } else {
+            weight = req.body.weight;
+            description = req.body.description;
+            quantity = req.body.quantity || 1;
+        }
+        
         if (!weight || isNaN(parseFloat(weight))) {
             return res.status(400).json({ error: 'Invalid or missing weight.' });
         }
@@ -295,8 +307,11 @@ app.post('/api/orders', async (req, res) => {
             pickupAddress,
             deliveryAddress,
             serviceType,
-            weight,
-            description: description || '',
+            packageDetails: {
+                weight: parseFloat(weight),
+                description: description || '',
+                quantity: parseInt(quantity) || 1
+            },
             specialInstructions: specialInstructions || '',
             status: 'Order Placed',
             currentStage: 'Order Placed',
@@ -306,10 +321,10 @@ app.post('/api/orders', async (req, res) => {
             estimatedDelivery: calculateEstimatedDelivery(serviceType),
             stages: [
                 {
-                    status: 'Order Placed',
+                    stage: 'Order Placed',
                     timestamp: new Date().toISOString(),
-                    location: 'Order Processing Center',
-                    description: 'Order has been received and is being processed'
+                    location: 'Online',
+                    description: 'Order received and confirmed'
                 }
             ]
         };
