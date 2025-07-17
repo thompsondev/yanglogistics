@@ -480,7 +480,10 @@ function setupEventListeners() {
     // Update form submission
     const updateForm = document.getElementById('updateForm');
     if (updateForm) {
+        console.log('✅ Update form found, adding submit listener');
         updateForm.addEventListener('submit', handleStatusUpdate);
+    } else {
+        console.error('❌ Update form not found!');
     }
     
     // Modal close buttons
@@ -671,6 +674,9 @@ function updateOrderStatus(orderId) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
+    console.log('🔍 Opening update modal for order:', orderId);
+    console.log('🔍 Order data:', order);
+
     // currentOrderId = orderId; // This variable is no longer global
     document.getElementById('updateOrderId').textContent = order.id;
     document.getElementById('updateTrackingNumber').textContent = order.trackingNumber;
@@ -678,8 +684,24 @@ function updateOrderStatus(orderId) {
 
     // Prefill location and description from the latest stage if available
     let lastStage = order.stages && order.stages.length > 0 ? order.stages[order.stages.length - 1] : null;
-    document.getElementById('updateLocation').value = lastStage && lastStage.location ? lastStage.location : '';
-    document.getElementById('updateDescription').value = lastStage && lastStage.description ? lastStage.description : '';
+    console.log('🔍 Last stage:', lastStage);
+    
+    const locationField = document.getElementById('updateLocation');
+    const descriptionField = document.getElementById('updateDescription');
+    
+    if (locationField) {
+        locationField.value = lastStage && lastStage.location ? lastStage.location : '';
+        console.log('🔍 Set location field to:', locationField.value);
+    } else {
+        console.error('❌ Location field not found!');
+    }
+    
+    if (descriptionField) {
+        descriptionField.value = lastStage && lastStage.description ? lastStage.description : '';
+        console.log('🔍 Set description field to:', descriptionField.value);
+    } else {
+        console.error('❌ Description field not found!');
+    }
 
     document.getElementById('updateModal').style.display = 'flex';
 }
@@ -699,13 +721,25 @@ async function handleStatusUpdate(e) {
     const location = document.getElementById('updateLocation').value;
     const description = document.getElementById('updateDescription').value;
 
-    // Debug logging
+    // Enhanced debug logging
     console.log('🔍 Form Data:', {
         orderId,
         newStatus,
         location,
         description
     });
+    
+    console.log('🔍 Form Elements:');
+    console.log('  - updateOrderId element:', document.getElementById('updateOrderId'));
+    console.log('  - newStatus element:', document.getElementById('newStatus'));
+    console.log('  - updateLocation element:', document.getElementById('updateLocation'));
+    console.log('  - updateDescription element:', document.getElementById('updateDescription'));
+    
+    console.log('🔍 Form Values:');
+    console.log('  - orderId value:', orderId);
+    console.log('  - newStatus value:', newStatus);
+    console.log('  - location value:', location);
+    console.log('  - description value:', description);
 
     if (!newStatus || !location || !description) {
         showNotification('Please fill in all fields.', 'error');

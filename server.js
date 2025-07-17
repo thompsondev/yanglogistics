@@ -490,8 +490,8 @@ app.patch('/api/orders/:id/status', async (req, res) => {
         const newStage = {
             stage: status,
             timestamp: new Date().toISOString(),
-            location: location || 'Processing Center',
-            description: description || `Order status updated to ${status}`
+            location: location && location.trim() !== '' ? location : 'Processing Center',
+            description: description && description.trim() !== '' ? description : `Order status updated to ${status}`
         };
 
         console.log('📝 Creating new stage:', newStage);
