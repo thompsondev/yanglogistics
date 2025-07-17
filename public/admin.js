@@ -1,5 +1,6 @@
 (function() {
 // Enhanced Admin Dashboard with Mobile Responsiveness
+// VERSION: PUBLIC-ADMIN-JS-LOADED
 
 // Global variables
 let allOrders = [];
@@ -631,62 +632,80 @@ function closeUpdateModal() {
 // Enhanced status update handling with mobile optimization
 async function handleStatusUpdate(e) {
     e.preventDefault();
-    
+
+    console.log('🚀 Form submission started');
+    console.log('🔍 Event object:', e);
+    console.log('🔍 Form element:', e.target);
+
+    const orderId = document.getElementById('updateOrderId').textContent;
     const newStatus = document.getElementById('newStatus').value;
     const location = document.getElementById('updateLocation').value;
     const description = document.getElementById('updateDescription').value;
-    const order = allOrders.find(o => o.id === currentOrderId);
+
+    // Enhanced debug logging
+    console.log('🔍 Form Data:', {
+        orderId,
+        newStatus,
+        location,
+        description
+    });
     
-    if (!order) {
-        showNotification('Order not found', 'error');
+    console.log('🔍 Form Elements:');
+    console.log('  - updateOrderId element:', document.getElementById('updateOrderId'));
+    console.log('  - newStatus element:', document.getElementById('newStatus'));
+    console.log('  - updateLocation element:', document.getElementById('updateLocation'));
+    console.log('  - updateDescription element:', document.getElementById('updateDescription'));
+    
+    console.log('🔍 Form Values:');
+    console.log('  - orderId value:', orderId);
+    console.log('  - newStatus value:', newStatus);
+    console.log('  - location value:', location);
+    console.log('  - description value:', description);
+
+    // Check if elements exist
+    if (!document.getElementById('updateLocation')) {
+        console.error('❌ updateLocation element not found!');
+        showNotification('Form error: Location field not found', 'error');
         return;
     }
     
+    if (!document.getElementById('updateDescription')) {
+        console.error('❌ updateDescription element not found!');
+        showNotification('Form error: Description field not found', 'error');
+        return;
+    }
+
     if (!newStatus || !location || !description) {
+        console.error('❌ Missing required fields:', { newStatus: !!newStatus, location: !!location, description: !!description });
         showNotification('Please fill in all fields.', 'error');
         return;
     }
 
     try {
-        showLoadingIndicator();
-        
-        // Use backend API to update order status with location and description
-        const response = await api.updateOrderStatus(currentOrderId, { 
+        // Use backend API to update order status
+        const updateData = {
             status: newStatus,
             location: location,
             description: description
-        });
+        };
         
+        console.log('📤 Sending update data:', updateData);
+        
+        const response = await api.updateOrderStatus(orderId, updateData);
+
+        console.log('📥 Server response:', response);
+
         if (response.success) {
-            // Update local order with the complete updated order from server
-            const updatedOrder = response.order;
-            const orderIndex = allOrders.findIndex(o => o.id === currentOrderId);
-            if (orderIndex !== -1) {
-                allOrders[orderIndex] = updatedOrder;
-            }
-            
-            // Update filtered orders
-            const filteredOrderIndex = filteredOrders.findIndex(o => o.id === currentOrderId);
-            if (filteredOrderIndex !== -1) {
-                filteredOrders[filteredOrderIndex] = updatedOrder;
-            }
-            
-            // Re-render table
-            renderOrdersTable();
-            
-            // Update stats
+            // Always reload orders from backend after update
+            await loadOrders();
             await updateDashboardStats();
-            
+            renderOrdersTable();
             closeUpdateModal();
-            showNotification('Order status updated successfully', 'success');
-        } else {
-            showNotification('Failed to update order status', 'error');
+            showNotification('Order status updated successfully!', 'success');
         }
-        
-        hideLoadingIndicator();
+
     } catch (error) {
         console.error('Error updating order status:', error);
-        hideLoadingIndicator();
         showNotification('Error updating order status. Please try again.', 'error');
     }
 }

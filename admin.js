@@ -1,4 +1,5 @@
 // Enhanced Admin Dashboard with Mobile Responsiveness
+// VERSION: ROOT-ADMIN-JS-LOADED
 
 // Global variables
 let orders = [];
@@ -716,6 +717,10 @@ function closeUpdateModal() {
 async function handleStatusUpdate(e) {
     e.preventDefault();
 
+    console.log('🚀 Form submission started');
+    console.log('🔍 Event object:', e);
+    console.log('🔍 Form element:', e.target);
+
     const orderId = document.getElementById('updateOrderId').textContent;
     const newStatus = document.getElementById('newStatus').value;
     const location = document.getElementById('updateLocation').value;
@@ -741,7 +746,21 @@ async function handleStatusUpdate(e) {
     console.log('  - location value:', location);
     console.log('  - description value:', description);
 
+    // Check if elements exist
+    if (!document.getElementById('updateLocation')) {
+        console.error('❌ updateLocation element not found!');
+        showNotification('Form error: Location field not found', 'error');
+        return;
+    }
+    
+    if (!document.getElementById('updateDescription')) {
+        console.error('❌ updateDescription element not found!');
+        showNotification('Form error: Description field not found', 'error');
+        return;
+    }
+
     if (!newStatus || !location || !description) {
+        console.error('❌ Missing required fields:', { newStatus: !!newStatus, location: !!location, description: !!description });
         showNotification('Please fill in all fields.', 'error');
         return;
     }
