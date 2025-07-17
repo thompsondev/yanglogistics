@@ -48,17 +48,17 @@ async function findOrderByTrackingNumber(trackingNumber) {
     }
 }
 
-// Enhanced tracking result display with mobile optimization
+// Enhanced tracking result display with modern UI
 function displayTrackingResult(order) {
     // Hide no result message
     noResult.style.display = 'none';
     
-    // Populate tracking information with mobile-friendly layout
+    // Populate tracking information
     document.getElementById('displayTrackingNumber').textContent = order.trackingNumber;
     document.getElementById('orderStatus').textContent = order.status;
     document.getElementById('serviceType').textContent = order.serviceType;
     
-    // Enhanced date formatting for mobile
+    // Enhanced date formatting
     const estimatedDelivery = new Date(order.estimatedDelivery);
     const actualDelivery = order.actualDelivery ? new Date(order.actualDelivery) : null;
     
@@ -71,10 +71,8 @@ function displayTrackingResult(order) {
     };
     
     document.getElementById('estimatedDelivery').textContent = formatDate(estimatedDelivery);
-    document.getElementById('actualDelivery').textContent = actualDelivery ? 
-        formatDate(actualDelivery) : 'Not delivered yet';
     
-    // Package details with mobile optimization
+    // Package details
     document.getElementById('packageWeight').textContent = order.packageDetails.weight;
     document.getElementById('packageDescription').textContent = order.packageDetails.description;
     document.getElementById('packageQuantity').textContent = order.packageDetails.quantity;
@@ -83,31 +81,29 @@ function displayTrackingResult(order) {
     document.getElementById('pickupAddress').textContent = order.pickupAddress;
     document.getElementById('deliveryAddress').textContent = order.deliveryAddress;
     
-    // Update status badge color with mobile-friendly styling
-    const statusBadge = document.getElementById('orderStatus');
-    statusBadge.className = 'status-badge status-' + order.status.toLowerCase().replace(' ', '-');
+    // Update status dot color
+    const statusDot = document.getElementById('statusDot');
+    const status = order.status.toLowerCase();
     
-    // Enhanced timeline display for mobile
+    if (status.includes('delivered')) {
+        statusDot.style.background = '#10b981';
+    } else if (status.includes('transit') || status.includes('shipped')) {
+        statusDot.style.background = '#667eea';
+    } else if (status.includes('pending')) {
+        statusDot.style.background = '#f59e0b';
+    } else {
+        statusDot.style.background = '#64748b';
+    }
+    
+    // Enhanced timeline display
     displayTimeline(order.stages);
     
-    // Show result with mobile optimization
+    // Show result
     trackingResult.style.display = 'block';
     hideLoading();
     
-    // Enhanced scroll behavior for mobile
-    if (window.innerWidth <= 768) {
-        // Scroll to result with offset for mobile header
-        const offset = 80;
-        const elementPosition = trackingResult.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - offset;
-        
-        window.scrollTo({
-            top: offsetPosition,
-            behavior: 'smooth'
-        });
-    } else {
-        trackingResult.scrollIntoView({ behavior: 'smooth' });
-    }
+    // Smooth scroll to result
+    trackingResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Enhanced professional timeline display with mobile optimization
