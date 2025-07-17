@@ -699,6 +699,14 @@ async function handleStatusUpdate(e) {
     const location = document.getElementById('updateLocation').value;
     const description = document.getElementById('updateDescription').value;
 
+    // Debug logging
+    console.log('🔍 Form Data:', {
+        orderId,
+        newStatus,
+        location,
+        description
+    });
+
     if (!newStatus || !location || !description) {
         showNotification('Please fill in all fields.', 'error');
         return;
@@ -706,11 +714,17 @@ async function handleStatusUpdate(e) {
 
     try {
         // Use backend API to update order status
-        const response = await api.updateOrderStatus(orderId, {
+        const updateData = {
             status: newStatus,
             location: location,
             description: description
-        });
+        };
+        
+        console.log('📤 Sending update data:', updateData);
+        
+        const response = await api.updateOrderStatus(orderId, updateData);
+
+        console.log('📥 Server response:', response);
 
         if (response.success) {
             // Always reload orders from backend after update

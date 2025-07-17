@@ -28,6 +28,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Logging middleware
 app.use(morgan('dev'));
 
+// Serve static files (HTML, CSS, JS) - must be before routes
+app.use(express.static(__dirname));
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -464,6 +467,15 @@ app.patch('/api/orders/:id/status', async (req, res) => {
         const { id } = req.params;
         const { status, location, description } = req.body;
 
+        // Debug logging
+        console.log('🔍 Received update request:', {
+            orderId: id,
+            status,
+            location,
+            description,
+            body: req.body
+        });
+
         if (!status) {
             return res.status(400).json({ error: 'Status is required' });
         }
@@ -482,6 +494,8 @@ app.patch('/api/orders/:id/status', async (req, res) => {
             description: description || `Order status updated to ${status}`
         };
 
+        console.log('📝 Creating new stage:', newStage);
+
         order.stages.push(newStage);
         order.status = status;
         order.currentStage = status;
@@ -493,6 +507,8 @@ app.patch('/api/orders/:id/status', async (req, res) => {
         }
 
         await writeDatabase(db);
+
+        console.log('✅ Order updated successfully');
 
         res.json({
             success: true,
