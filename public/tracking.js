@@ -110,12 +110,23 @@ function displayTrackingResult(order) {
     }
 }
 
-// Enhanced timeline display with mobile optimization
+// Enhanced professional timeline display with mobile optimization
 function displayTimeline(stages) {
     const timelineContainer = document.getElementById('timelineContainer');
     timelineContainer.innerHTML = '';
     
     const isMobile = window.innerWidth <= 768;
+    
+    // Update summary information
+    if (stages.length > 0) {
+        const currentStage = stages[stages.length - 1];
+        const lastUpdate = new Date(currentStage.timestamp);
+        
+        document.getElementById('currentLocation').textContent = currentStage.location;
+        document.getElementById('lastUpdate').textContent = isMobile ? 
+            lastUpdate.toLocaleDateString() + ' ' + lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+            lastUpdate.toLocaleDateString() + ' ' + lastUpdate.toLocaleTimeString();
+    }
     
     stages.forEach((stage, index) => {
         const timelineItem = document.createElement('div');
@@ -126,8 +137,16 @@ function displayTimeline(stages) {
             date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
             date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
         
+        // Determine marker class based on position
+        let markerClass = '';
+        if (index === stages.length - 1) {
+            markerClass = 'active';
+        } else if (index < stages.length - 1) {
+            markerClass = 'completed';
+        }
+        
         timelineItem.innerHTML = `
-            <div class="timeline-marker ${index === stages.length - 1 ? 'active' : ''}"></div>
+            <div class="timeline-marker ${markerClass}"></div>
             <div class="timeline-content">
                 <div class="timeline-header">
                     <h4>${stage.stage}</h4>
