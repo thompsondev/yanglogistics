@@ -40,6 +40,54 @@ app.use('/api/', limiter);
 const { DATABASE_PATH } = require('./database-config');
 const DB_PATH = DATABASE_PATH;
 
+// Initialize database if it doesn't exist
+async function initializeDatabase() {
+    try {
+        await fs.access(DB_PATH);
+        console.log('📊 Database file exists');
+    } catch (error) {
+        console.log('📊 Initializing new database file...');
+        const initialDb = {
+            orders: [],
+            trackingStages: [
+                "Order Placed",
+                "Package Picked Up",
+                "Out for Delivery",
+                "In Transit",
+                "Delivered",
+                "Failed Delivery"
+            ],
+            serviceTypes: [
+                "Standard Delivery",
+                "Express Delivery",
+                "Air Freight",
+                "Ocean Freight",
+                "Ground Transport",
+                "Same Day Delivery"
+            ],
+            nextOrderId: 1,
+            nextTrackingNumber: 1001,
+            adminAccounts: [
+                {
+                    id: "ADM1701234567890",
+                    firstName: "Admin",
+                    lastName: "User",
+                    email: "admin@yanglogistics.com",
+                    phone: "+1-555-0123",
+                    company: "YangLogistics",
+                    role: "super_admin",
+                    password: "Admin123!",
+                    createdAt: "2024-12-01T10:00:00Z",
+                    isActive: true
+                }
+            ]
+        };
+        
+        await fs.writeFile(DB_PATH, JSON.stringify(initialDb, null, 2), 'utf8');
+        console.log('✅ Database initialized successfully');
+    }
+}
+
 // Utility functions
 async function readDatabase() {
     try {
@@ -620,7 +668,10 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
+    // Initialize database on startup
+    await initializeDatabase();
+    
     console.log(`🚚 YangLogistics API Server running on port ${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
     console.log(`🌐 API Base: http://localhost:${PORT}`);

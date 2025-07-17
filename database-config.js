@@ -11,7 +11,7 @@ const config = {
     // Production (Railway/Heroku/etc)
     production: {
         // Use environment variable for production database path
-        databasePath: process.env.DATABASE_PATH || '/app/data/database.json',
+        databasePath: process.env.DATABASE_PATH || '/app/database.json',
         description: 'Production database (persistent storage)'
     }
 };
