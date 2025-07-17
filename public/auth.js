@@ -41,6 +41,7 @@ if (loginForm) {
             if (response.success) {
                 // Set authentication flags
                 localStorage.setItem('adminLoggedIn', 'true');
+                localStorage.setItem('adminToken', response.token);
                 showNotification('Login successful! Redirecting...', 'success');
                 
                 // Enhanced redirect with mobile optimization
