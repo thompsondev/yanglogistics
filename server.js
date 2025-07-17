@@ -211,8 +211,8 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 });
 
-// Orders CRUD routes
-app.get('/api/orders', authenticateToken, async (req, res) => {
+// Orders CRUD routes (public access)
+app.get('/api/orders', async (req, res) => {
     try {
         const db = await readDatabase();
         const { search, status, serviceType, page = 1, limit = 10 } = req.query;
@@ -344,7 +344,7 @@ app.post('/api/orders', async (req, res) => {
     }
 });
 
-app.get('/api/orders/:id', authenticateToken, async (req, res) => {
+app.get('/api/orders/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const db = await readDatabase();
@@ -492,7 +492,7 @@ app.get('/api/track/:trackingNumber', async (req, res) => {
 });
 
 // Dashboard statistics
-app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
+app.get('/api/dashboard/stats', async (req, res) => {
     try {
         const db = await readDatabase();
         
@@ -517,7 +517,7 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
 });
 
 // Export orders
-app.get('/api/orders/export/csv', authenticateToken, async (req, res) => {
+app.get('/api/orders/export/csv', async (req, res) => {
     try {
         const db = await readDatabase();
         const { status, serviceType } = req.query;

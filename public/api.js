@@ -79,7 +79,7 @@ class LogisticsAPI {
         });
     }
 
-    // Orders CRUD methods
+    // Orders CRUD methods (public access)
     async getOrders(filters = {}) {
         const params = new URLSearchParams();
         
@@ -90,7 +90,27 @@ class LogisticsAPI {
         if (filters.limit) params.append('limit', filters.limit);
 
         const endpoint = `/orders${params.toString() ? '?' + params.toString() : ''}`;
-        return await this.request(endpoint);
+        
+        // Use public request without authentication
+        try {
+            const url = `${this.baseURL}${endpoint}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
+        }
     }
 
     async getOrder(orderId) {
@@ -129,9 +149,27 @@ class LogisticsAPI {
         return await this.request(`/track/${trackingNumber}`);
     }
 
-    // Dashboard methods
+    // Dashboard methods (public access)
     async getDashboardStats() {
-        return await this.request('/dashboard/stats');
+        try {
+            const url = `${this.baseURL}/dashboard/stats`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Dashboard stats request failed:', error);
+            throw error;
+        }
     }
 
     async exportOrders(filters = {}) {
@@ -145,7 +183,9 @@ class LogisticsAPI {
         try {
             const url = `${this.baseURL}${endpoint}`;
             const response = await fetch(url, {
-                headers: this.getHeaders()
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
 
             if (!response.ok) {

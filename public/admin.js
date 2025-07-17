@@ -47,28 +47,9 @@ let isRealTimeEnabled = true;
 
 // Enhanced initialization with mobile optimization
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check authentication
-    const isLoggedIn = localStorage.getItem('adminLoggedIn');
-    const adminToken = localStorage.getItem('adminToken');
+    console.log('Admin page loaded - No authentication required');
     
-    console.log('Admin page loaded - Auth check:', { isLoggedIn, adminToken: adminToken ? 'present' : 'missing' });
-    
-    if (!isLoggedIn || !adminToken) {
-        console.log('Not authenticated, redirecting to login');
-        window.location.href = 'login.html';
-        return;
-    }
-    
-    // Setup logout functionality
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            logout();
-        });
-    }
-    
-    // Initialize dashboard directly (health check is optional)
+    // Initialize dashboard directly
     try {
         console.log('Initializing dashboard...');
         await initializeDashboard();
@@ -81,12 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         console.error('Dashboard initialization failed:', error);
-        // Only logout if it's an authentication error
-        if (error.message && error.message.includes('401')) {
-            logout();
-        } else {
-            showNotification('Error loading dashboard. Please refresh the page.', 'error');
-        }
+        showNotification('Error loading dashboard. Please refresh the page.', 'error');
     }
 });
 
@@ -121,15 +97,15 @@ function initializeMobileOptimizations() {
     setupMobileEventListeners();
 }
 
-// Logout function
+// Logout function (no longer needed but kept for compatibility)
 function logout() {
-    // Clear authentication data
+    // Clear any existing authentication data
     localStorage.removeItem('adminLoggedIn');
     localStorage.removeItem('adminToken');
     api.clearToken();
     
-    // Redirect to login page
-    window.location.href = 'login.html';
+    // Redirect to home page instead of login
+    window.location.href = 'index.html';
 }
 
 // Enhanced mobile event listeners
