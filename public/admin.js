@@ -633,18 +633,29 @@ async function handleStatusUpdate(e) {
     e.preventDefault();
     
     const newStatus = document.getElementById('newStatus').value;
+    const location = document.getElementById('updateLocation').value;
+    const description = document.getElementById('updateDescription').value;
     const order = allOrders.find(o => o.id === currentOrderId);
     
     if (!order) {
         showNotification('Order not found', 'error');
         return;
     }
+    
+    if (!newStatus || !location || !description) {
+        showNotification('Please fill in all fields.', 'error');
+        return;
+    }
 
     try {
         showLoadingIndicator();
         
-        // Use backend API to update order status
-        const response = await api.updateOrderStatus(currentOrderId, { status: newStatus });
+        // Use backend API to update order status with location and description
+        const response = await api.updateOrderStatus(currentOrderId, { 
+            status: newStatus,
+            location: location,
+            description: description
+        });
         
         if (response.success) {
             // Update local order with the complete updated order from server

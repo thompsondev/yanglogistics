@@ -36,8 +36,9 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// Database file path
-const DB_PATH = path.join(__dirname, 'database.json');
+// Database configuration
+const { DATABASE_PATH } = require('./database-config');
+const DB_PATH = DATABASE_PATH;
 
 // Utility functions
 async function readDatabase() {

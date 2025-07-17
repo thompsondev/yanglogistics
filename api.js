@@ -117,7 +117,7 @@ class LogisticsAPI {
 
     async updateOrderStatus(orderId, statusData) {
         return await this.request(`/orders/${orderId}/status`, {
-            method: 'POST',
+            method: 'PATCH',
             body: JSON.stringify(statusData)
         });
     }

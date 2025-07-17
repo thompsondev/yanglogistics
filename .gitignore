@@ -79,3 +79,8 @@ Thumbs.db
 
 # Test files
 test-login.html
+
+# Database files (keep production data separate)
+database.json
+*.db
+*.sqlite

@@ -341,11 +341,15 @@ function searchOrders(query) {
 }
 
 // Enhanced filter functionality with mobile optimization
-function filterOrders(status) {
-    if (status === 'all') {
-        filteredOrders = [...orders];
-    } else {
-        filteredOrders = orders.filter(order => order.status === status);
+function filterOrders(status, serviceType) {
+    filteredOrders = [...orders];
+    
+    if (status && status !== 'all') {
+        filteredOrders = filteredOrders.filter(order => order.status === status);
+    }
+    
+    if (serviceType && serviceType !== 'all') {
+        filteredOrders = filteredOrders.filter(order => order.serviceType === serviceType);
     }
     
     currentPage = 1;
@@ -426,7 +430,7 @@ function stopRealTimeUpdates() {
 // Enhanced event listeners setup with mobile optimization
 function setupEventListeners() {
     // Search functionality
-    const searchInput = document.getElementById('searchInput');
+    const searchInput = document.getElementById('searchOrders');
     if (searchInput) {
         let searchTimeout;
         searchInput.addEventListener('input', (e) => {
@@ -445,8 +449,16 @@ function setupEventListeners() {
         });
     }
     
+    // Service filter functionality
+    const serviceFilter = document.getElementById('serviceFilter');
+    if (serviceFilter) {
+        serviceFilter.addEventListener('change', (e) => {
+            filterOrders(null, e.target.value);
+        });
+    }
+    
     // Manual refresh button
-    const refreshBtn = document.getElementById('refreshBtn');
+    const refreshBtn = document.getElementById('refreshData');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', async () => {
             try {
@@ -461,6 +473,54 @@ function setupEventListeners() {
                 showNotification('Error refreshing dashboard', 'error');
             } finally {
                 hideLoading();
+            }
+        });
+    }
+    
+    // Update form submission
+    const updateForm = document.getElementById('updateForm');
+    if (updateForm) {
+        updateForm.addEventListener('submit', handleStatusUpdate);
+    }
+    
+    // Modal close buttons
+    const closeUpdateModalBtn = document.getElementById('closeUpdateModalBtn');
+    const closeUpdateModalBtn2 = document.getElementById('closeUpdateModalBtn2');
+    if (closeUpdateModalBtn) {
+        closeUpdateModalBtn.addEventListener('click', closeUpdateModal);
+    }
+    if (closeUpdateModalBtn2) {
+        closeUpdateModalBtn2.addEventListener('click', closeUpdateModal);
+    }
+    
+    const closeDetailsModalBtn = document.getElementById('closeDetailsModalBtn');
+    if (closeDetailsModalBtn) {
+        closeDetailsModalBtn.addEventListener('click', closeDetailsModal);
+    }
+    
+    const closeDeleteModalBtn = document.getElementById('closeDeleteModalBtn');
+    const closeDeleteModalBtn2 = document.getElementById('closeDeleteModalBtn2');
+    if (closeDeleteModalBtn) {
+        closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
+    }
+    if (closeDeleteModalBtn2) {
+        closeDeleteModalBtn2.addEventListener('click', closeDeleteModal);
+    }
+    
+    // Delete confirmation
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', confirmDelete);
+    }
+    
+    // Real-time toggle
+    const realTimeToggle = document.getElementById('realTimeToggle');
+    if (realTimeToggle) {
+        realTimeToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                startRealTimeUpdates();
+            } else {
+                stopRealTimeUpdates();
             }
         });
     }
@@ -634,6 +694,7 @@ function closeUpdateModal() {
 async function handleStatusUpdate(e) {
     e.preventDefault();
 
+    const orderId = document.getElementById('updateOrderId').textContent;
     const newStatus = document.getElementById('newStatus').value;
     const location = document.getElementById('updateLocation').value;
     const description = document.getElementById('updateDescription').value;
@@ -645,7 +706,7 @@ async function handleStatusUpdate(e) {
 
     try {
         // Use backend API to update order status
-        const response = await api.updateOrderStatus(currentOrderId, {
+        const response = await api.updateOrderStatus(orderId, {
             status: newStatus,
             location: location,
             description: description
@@ -687,8 +748,9 @@ function closeDeleteModal() {
 // Confirm delete
 async function confirmDelete() {
     try {
+        const orderId = document.getElementById('deleteOrderId').textContent;
         // Use backend API to delete order
-        const response = await api.deleteOrder(currentOrderId);
+        const response = await api.deleteOrder(orderId);
 
         if (response.success) {
             // Always reload orders from backend after delete
