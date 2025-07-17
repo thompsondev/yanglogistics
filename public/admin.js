@@ -51,6 +51,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
     const adminToken = localStorage.getItem('adminToken');
     
+    console.log('Admin page loaded - Auth check:', { isLoggedIn, adminToken: adminToken ? 'present' : 'missing' });
+    
     if (!isLoggedIn || !adminToken) {
         console.log('Not authenticated, redirecting to login');
         window.location.href = 'login.html';
@@ -66,10 +68,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Verify token is still valid by testing API call
+    // Initialize dashboard directly (health check is optional)
     try {
-        await api.healthCheck();
-        console.log('Authentication verified, initializing dashboard');
+        console.log('Initializing dashboard...');
         await initializeDashboard();
         setupRealTimeUpdates();
         setupEventListeners();
@@ -79,9 +80,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             initializeMobileOptimizations();
         }
     } catch (error) {
-        console.error('Authentication failed:', error);
-        // Clear invalid tokens and redirect
-        logout();
+        console.error('Dashboard initialization failed:', error);
+        // Only logout if it's an authentication error
+        if (error.message && error.message.includes('401')) {
+            logout();
+        } else {
+            showNotification('Error loading dashboard. Please refresh the page.', 'error');
+        }
     }
 });
 

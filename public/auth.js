@@ -37,6 +37,8 @@ if (loginForm) {
             console.log('Login data being sent:', loginData);
             const response = await api.login(loginData);
             console.log('Login response:', response);
+            console.log('Response success:', response.success);
+            console.log('Response token:', response.token ? 'present' : 'missing');
             
             if (response.success) {
                 // Set authentication flags

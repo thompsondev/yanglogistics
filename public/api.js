@@ -169,9 +169,27 @@ class LogisticsAPI {
         }
     }
 
-    // Health check
+    // Health check (public endpoint, no auth required)
     async healthCheck() {
-        return await this.request('/health');
+        try {
+            const url = `${this.baseURL}/health`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Health check failed:', error);
+            throw error;
+        }
     }
 }
 
