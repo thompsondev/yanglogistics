@@ -203,7 +203,33 @@ class LogisticsAPI {
 
     // Tracking method (public)
     async trackPackage(trackingNumber) {
-        return await this.request(`/track/${trackingNumber}`);
+        try {
+            console.log('🔍 API: Tracking package:', trackingNumber);
+            const url = `${this.baseURL}/track/${trackingNumber}`;
+            console.log('🔗 API: Request URL:', url);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            console.log('📡 API: Response status:', response.status);
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('❌ API: Error response:', errorData);
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ API: Success response:', data);
+            return data;
+        } catch (error) {
+            console.error('❌ API: Tracking request failed:', error);
+            throw error;
+        }
     }
 
     // Dashboard methods (public access)

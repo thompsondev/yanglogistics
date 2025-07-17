@@ -22,17 +22,33 @@ trackingForm.addEventListener('submit', async (e) => {
         // Enhanced tracking with mobile-friendly error handling
         const order = await findOrderByTrackingNumber(trackingNumber);
         
-        if (order) {
+        console.log('📦 Order received:', order);
+        
+        // Check if order exists and has required properties
+        if (order && order.trackingNumber) {
+            console.log('✅ Valid order found, displaying result');
             displayTrackingResult(order);
         } else {
+            console.log('❌ No valid order found, showing no result');
             showNoResult();
         }
         
-        hideLoading();
-        
     } catch (error) {
-        console.error('Error tracking package:', error);
-        showNotification('Error tracking package. Please try again.', 'error');
+        console.error('❌ Error tracking package:', error);
+        
+        // More specific error messages
+        let errorMessage = 'Error tracking package. Please try again.';
+        
+        if (error.message.includes('404')) {
+            errorMessage = 'Tracking number not found. Please check the number and try again.';
+        } else if (error.message.includes('500')) {
+            errorMessage = 'Server error. Please try again later.';
+        } else if (error.message.includes('fetch')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+        }
+        
+        showNotification(errorMessage, 'error');
+    } finally {
         hideLoading();
     }
 });
@@ -40,10 +56,34 @@ trackingForm.addEventListener('submit', async (e) => {
 // Enhanced order finding with mobile optimization
 async function findOrderByTrackingNumber(trackingNumber) {
     try {
+        console.log('🔍 Searching for tracking number:', trackingNumber);
+        console.log('🔗 API URL:', window.API_BASE_URL);
+        
         const response = await api.trackPackage(trackingNumber);
-        return response;
+        console.log('✅ Tracking response:', response);
+        
+        // Validate the response
+        if (!response) {
+            console.log('❌ No response received');
+            return null;
+        }
+        
+        // Check if response has the expected structure
+        if (typeof response === 'object' && response.trackingNumber) {
+            console.log('✅ Valid order response received');
+            return response;
+        } else {
+            console.log('❌ Invalid response structure:', response);
+            return null;
+        }
+        
     } catch (error) {
-        console.error('API Error:', error);
+        console.error('❌ API Error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            apiUrl: window.API_BASE_URL
+        });
         throw error;
     }
 }
@@ -100,7 +140,6 @@ function displayTrackingResult(order) {
     
     // Show result
     trackingResult.style.display = 'block';
-    hideLoading();
     
     // Smooth scroll to result
     trackingResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
