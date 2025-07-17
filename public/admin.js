@@ -647,13 +647,17 @@ async function handleStatusUpdate(e) {
         const response = await api.updateOrderStatus(currentOrderId, { status: newStatus });
         
         if (response.success) {
-            // Update local order
-            order.status = newStatus;
+            // Update local order with the complete updated order from server
+            const updatedOrder = response.order;
+            const orderIndex = allOrders.findIndex(o => o.id === currentOrderId);
+            if (orderIndex !== -1) {
+                allOrders[orderIndex] = updatedOrder;
+            }
             
             // Update filtered orders
-            const filteredOrder = filteredOrders.find(o => o.id === currentOrderId);
-            if (filteredOrder) {
-                filteredOrder.status = newStatus;
+            const filteredOrderIndex = filteredOrders.findIndex(o => o.id === currentOrderId);
+            if (filteredOrderIndex !== -1) {
+                filteredOrders[filteredOrderIndex] = updatedOrder;
             }
             
             // Re-render table

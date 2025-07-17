@@ -43,10 +43,10 @@
           "description": "Order received and confirmed"
         },
         {
-          "status": "Order Placed",
           "timestamp": "2025-07-17T11:12:55.275Z",
           "location": "Processing Center",
-          "description": "Order status updated to Order Placed"
+          "description": "Order status updated to Order Placed",
+          "stage": "Order Placed"
         }
       ],
       "estimatedDelivery": "2025-07-14T16:00:00.000Z",
@@ -92,10 +92,10 @@
           "description": "Order received and confirmed"
         },
         {
-          "status": "Out for Delivery",
           "timestamp": "2025-07-17T11:13:25.213Z",
           "location": "Processing Center",
-          "description": "Order status updated to Out for Delivery"
+          "description": "Order status updated to Out for Delivery",
+          "stage": "Out for Delivery"
         }
       ],
       "estimatedDelivery": "2025-07-14T16:00:00.000Z",
