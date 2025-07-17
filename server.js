@@ -65,22 +65,10 @@ async function writeDatabase(data) {
     }
 }
 
-// Authentication middleware
+// Authentication middleware (disabled - public access)
 function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({ error: 'Access token required' });
-    }
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ error: 'Invalid or expired token' });
-        }
-        req.user = user;
-        next();
-    });
+    // Skip authentication - allow public access
+    next();
 }
 
 // Generate tracking number
@@ -363,7 +351,7 @@ app.get('/api/orders/:id', async (req, res) => {
     }
 });
 
-app.put('/api/orders/:id', authenticateToken, async (req, res) => {
+app.put('/api/orders/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
@@ -396,7 +384,7 @@ app.put('/api/orders/:id', authenticateToken, async (req, res) => {
     }
 });
 
-app.delete('/api/orders/:id', authenticateToken, async (req, res) => {
+app.delete('/api/orders/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const db = await readDatabase();
@@ -422,7 +410,7 @@ app.delete('/api/orders/:id', authenticateToken, async (req, res) => {
 });
 
 // Update order status
-app.patch('/api/orders/:id/status', authenticateToken, async (req, res) => {
+app.patch('/api/orders/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
         const { status, location, description } = req.body;

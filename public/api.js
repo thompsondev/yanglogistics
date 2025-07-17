@@ -1,39 +1,30 @@
 // API Configuration
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000/api';
 
-// API Service Class
+// API Service Class (Public Access)
 class LogisticsAPI {
     constructor() {
         this.baseURL = API_BASE_URL;
-        this.token = localStorage.getItem('adminToken');
     }
 
-    // Set authentication token
+    // Set authentication token (no longer needed)
     setToken(token) {
-        this.token = token;
-        localStorage.setItem('adminToken', token);
+        // Token storage disabled for public access
     }
 
-    // Clear authentication token
+    // Clear authentication token (no longer needed)
     clearToken() {
-        this.token = null;
-        localStorage.removeItem('adminToken');
+        // Token clearing disabled for public access
     }
 
-    // Get headers for API requests
+    // Get headers for API requests (public access)
     getHeaders() {
-        const headers = {
+        return {
             'Content-Type': 'application/json'
         };
-        
-        if (this.token) {
-            headers['Authorization'] = `Bearer ${this.token}`;
-        }
-        
-        return headers;
     }
 
-    // Generic API request method
+    // Generic API request method (public access)
     async request(endpoint, options = {}) {
         try {
             const url = `${this.baseURL}${endpoint}`;
@@ -114,7 +105,25 @@ class LogisticsAPI {
     }
 
     async getOrder(orderId) {
-        return await this.request(`/orders/${orderId}`);
+        try {
+            const url = `${this.baseURL}/orders/${orderId}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
+        }
     }
 
     async createOrder(orderData) {
@@ -125,23 +134,71 @@ class LogisticsAPI {
     }
 
     async updateOrder(orderId, updateData) {
-        return await this.request(`/orders/${orderId}`, {
-            method: 'PUT',
-            body: JSON.stringify(updateData)
-        });
+        try {
+            const url = `${this.baseURL}/orders/${orderId}`;
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
+        }
     }
 
     async deleteOrder(orderId) {
-        return await this.request(`/orders/${orderId}`, {
-            method: 'DELETE'
-        });
+        try {
+            const url = `${this.baseURL}/orders/${orderId}`;
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
+        }
     }
 
     async updateOrderStatus(orderId, statusData) {
-        return await this.request(`/orders/${orderId}/status`, {
-            method: 'PATCH',
-            body: JSON.stringify(statusData)
-        });
+        try {
+            const url = `${this.baseURL}/orders/${orderId}/status`;
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(statusData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
+        }
     }
 
     // Tracking method (public)

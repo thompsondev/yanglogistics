@@ -15,8 +15,8 @@
         "quantity": 1
       },
       "serviceType": "Express Delivery",
-      "status": "Failed Delivery",
-      "currentStage": "Failed Delivery",
+      "status": "Order Placed",
+      "currentStage": "Order Placed",
       "stages": [
         {
           "stage": "Order Placed",
@@ -41,13 +41,19 @@
           "timestamp": "2025-07-12T21:06:29.188Z",
           "location": "Online",
           "description": "Order received and confirmed"
+        },
+        {
+          "status": "Order Placed",
+          "timestamp": "2025-07-17T11:12:55.275Z",
+          "location": "Processing Center",
+          "description": "Order status updated to Order Placed"
         }
       ],
       "estimatedDelivery": "2025-07-14T16:00:00.000Z",
       "actualDelivery": "2025-07-12T15:44:40.785Z",
       "price": 325,
       "createdAt": "2025-07-12T09:44:20.379Z",
-      "updatedAt": "2025-07-12T21:06:29.188Z"
+      "updatedAt": "2025-07-17T11:12:55.275Z"
     },
     {
       "id": "ORD1752313699262752",
@@ -64,8 +70,8 @@
         "quantity": 1
       },
       "serviceType": "Express Delivery",
-      "status": "In Transit",
-      "currentStage": "In Transit",
+      "status": "Out for Delivery",
+      "currentStage": "Out for Delivery",
       "stages": [
         {
           "stage": "Order Placed",
@@ -84,13 +90,19 @@
           "timestamp": "2025-07-12T15:44:24.680Z",
           "location": "Online",
           "description": "Order received and confirmed"
+        },
+        {
+          "status": "Out for Delivery",
+          "timestamp": "2025-07-17T11:13:25.213Z",
+          "location": "Processing Center",
+          "description": "Order status updated to Out for Delivery"
         }
       ],
       "estimatedDelivery": "2025-07-14T16:00:00.000Z",
       "actualDelivery": null,
       "price": 408,
       "createdAt": "2025-07-12T09:48:19.263Z",
-      "updatedAt": "2025-07-12T15:44:24.680Z"
+      "updatedAt": "2025-07-17T11:13:25.213Z"
     },
     {
       "id": "ORD1752316309174709",
