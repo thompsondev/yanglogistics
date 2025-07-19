@@ -396,12 +396,55 @@
         }
 
         function showNotification(message, type = 'info') {
-            // Use existing notification system from auth.js
-            if (typeof window.showNotification === 'function') {
-                window.showNotification(message, type);
-            } else {
-                alert(message);
-            }
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <span class="notification-message">${message}</span>
+                    <button class="notification-close">&times;</button>
+                </div>
+            `;
+            
+            // Add styles
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                max-width: 400px;
+                font-size: 1rem;
+            `;
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Close button functionality
+            const closeBtn = notification.querySelector('.notification-close');
+            closeBtn.addEventListener('click', () => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            });
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, 5000);
         }
 
         // Change Admin Password Functions
@@ -791,6 +834,41 @@
 
         .text-success {
             color: #059669;
+        }
+
+        /* Notification styles */
+        .notification {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .notification-message {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+        }
+
+        .notification-close:hover {
+            opacity: 1;
         }
     </style>
 </body>
