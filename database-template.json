@@ -1,0 +1,35 @@
+{
+  "orders": [],
+  "trackingStages": [
+    "Order Placed",
+    "Package Picked Up",
+    "Out for Delivery",
+    "In Transit",
+    "Delivered",
+    "Failed Delivery"
+  ],
+  "serviceTypes": [
+    "Standard Delivery",
+    "Express Delivery",
+    "Air Freight",
+    "Ocean Freight",
+    "Ground Transport",
+    "Same Day Delivery"
+  ],
+  "nextOrderId": 1,
+  "nextTrackingNumber": 1001,
+  "adminAccounts": [
+    {
+      "id": "ADM1701234567890",
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin@yanglogistics.com",
+      "phone": "+1-555-0123",
+      "company": "YangLogistics",
+      "role": "super_admin",
+      "password": "Admin123!",
+      "createdAt": "2024-12-01T10:00:00Z",
+      "isActive": true
+    }
+  ]
+}

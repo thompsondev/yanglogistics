@@ -12,7 +12,10 @@
     "backups": "node scripts/backup-database.js list",
     "deploy": "bash scripts/deploy.sh",
     "setup-prod": "node scripts/setup-production.js full",
-    "migrate": "node scripts/setup-production.js migrate"
+    "migrate": "node scripts/setup-production.js migrate",
+    "fix-database": "node scripts/fix-database-overwrite.js",
+    "check-deployment": "node scripts/check-deployment-safety.js",
+    "predeploy": "npm run check-deployment"
   },
   "keywords": [
     "logistics",
