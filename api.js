@@ -84,6 +84,15 @@ class LogisticsAPI {
         });
     }
 
+    // Admin management methods
+    async getAdmins() {
+        return await this.request('/admins');
+    }
+
+    async getAdmin(adminId) {
+        return await this.request(`/admins/${adminId}`);
+    }
+
     // Orders CRUD methods
     async getOrders(filters = {}) {
         const params = new URLSearchParams();

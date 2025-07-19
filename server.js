@@ -275,6 +275,108 @@ app.post('/api/auth/change-password', async (req, res) => {
     }
 });
 
+// Get all admins endpoint
+app.get('/api/admins', async (req, res) => {
+    try {
+        // Check authentication
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Authentication token required' });
+        }
+        
+        const token = authHeader.substring(7);
+        let decoded;
+        
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (error) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+        
+        // Read database
+        const db = await readDatabase();
+        
+        // Return admin accounts without passwords for security
+        const admins = db.adminAccounts.map(admin => ({
+            id: admin.id,
+            firstName: admin.firstName,
+            lastName: admin.lastName,
+            email: admin.email,
+            phone: admin.phone,
+            company: admin.company,
+            role: admin.role,
+            createdAt: admin.createdAt,
+            isActive: admin.isActive,
+            lastLogin: admin.lastLogin || null
+        }));
+        
+        res.json({
+            success: true,
+            admins: admins,
+            total: admins.length
+        });
+        
+    } catch (error) {
+        console.error('Get admins error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get specific admin by ID endpoint
+app.get('/api/admins/:adminId', async (req, res) => {
+    try {
+        const { adminId } = req.params;
+        
+        // Check authentication
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Authentication token required' });
+        }
+        
+        const token = authHeader.substring(7);
+        let decoded;
+        
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (error) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+        
+        // Read database
+        const db = await readDatabase();
+        
+        // Find specific admin
+        const admin = db.adminAccounts.find(acc => acc.id === adminId);
+        
+        if (!admin) {
+            return res.status(404).json({ error: 'Admin not found' });
+        }
+        
+        // Return admin without password for security
+        const adminInfo = {
+            id: admin.id,
+            firstName: admin.firstName,
+            lastName: admin.lastName,
+            email: admin.email,
+            phone: admin.phone,
+            company: admin.company,
+            role: admin.role,
+            createdAt: admin.createdAt,
+            isActive: admin.isActive,
+            lastLogin: admin.lastLogin || null
+        };
+        
+        res.json({
+            success: true,
+            admin: adminInfo
+        });
+        
+    } catch (error) {
+        console.error('Get admin error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.post('/api/auth/signup', async (req, res) => {
     try {
         const { firstName, lastName, email, phone, company, role, password } = req.body;
