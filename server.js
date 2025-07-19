@@ -206,14 +206,14 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// Change password endpoint
+// Change password endpoint (no authentication required)
 app.post('/api/auth/change-password', async (req, res) => {
     try {
-        const { currentPassword, newPassword, confirmPassword } = req.body;
+        const { email, currentPassword, newPassword, confirmPassword } = req.body;
         
         // Validate input
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            return res.status(400).json({ error: 'All password fields are required' });
+        if (!email || !currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({ error: 'Email and all password fields are required' });
         }
         
         if (newPassword !== confirmPassword) {
@@ -224,24 +224,9 @@ app.post('/api/auth/change-password', async (req, res) => {
             return res.status(400).json({ error: 'New password must be at least 8 characters long' });
         }
         
-        // Get user from token
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Authentication token required' });
-        }
-        
-        const token = authHeader.substring(7);
-        let decoded;
-        
-        try {
-            decoded = jwt.verify(token, JWT_SECRET);
-        } catch (error) {
-            return res.status(401).json({ error: 'Invalid or expired token' });
-        }
-        
-        // Read database and find admin
+        // Read database and find admin by email
         const db = await readDatabase();
-        const adminIndex = db.adminAccounts.findIndex(acc => acc.id === decoded.id);
+        const adminIndex = db.adminAccounts.findIndex(acc => acc.email.toLowerCase() === email.toLowerCase());
         
         if (adminIndex === -1) {
             return res.status(404).json({ error: 'Admin account not found' });
@@ -275,24 +260,9 @@ app.post('/api/auth/change-password', async (req, res) => {
     }
 });
 
-// Get all admins endpoint
+// Get all admins endpoint (no authentication required)
 app.get('/api/admins', async (req, res) => {
     try {
-        // Check authentication
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Authentication token required' });
-        }
-        
-        const token = authHeader.substring(7);
-        let decoded;
-        
-        try {
-            decoded = jwt.verify(token, JWT_SECRET);
-        } catch (error) {
-            return res.status(401).json({ error: 'Invalid or expired token' });
-        }
-        
         // Read database
         const db = await readDatabase();
         
@@ -322,25 +292,10 @@ app.get('/api/admins', async (req, res) => {
     }
 });
 
-// Get specific admin by ID endpoint
+// Get specific admin by ID endpoint (no authentication required)
 app.get('/api/admins/:adminId', async (req, res) => {
     try {
         const { adminId } = req.params;
-        
-        // Check authentication
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Authentication token required' });
-        }
-        
-        const token = authHeader.substring(7);
-        let decoded;
-        
-        try {
-            decoded = jwt.verify(token, JWT_SECRET);
-        } catch (error) {
-            return res.status(401).json({ error: 'Invalid or expired token' });
-        }
         
         // Read database
         const db = await readDatabase();
