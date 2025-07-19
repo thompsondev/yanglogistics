@@ -77,6 +77,13 @@ class LogisticsAPI {
         });
     }
 
+    async changePassword(currentPassword, newPassword, confirmPassword) {
+        return await this.request('/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+        });
+    }
+
     // Orders CRUD methods
     async getOrders(filters = {}) {
         const params = new URLSearchParams();

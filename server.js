@@ -200,9 +200,77 @@ app.post('/api/auth/login', async (req, res) => {
                 role: admin.role
             }
         });
-
     } catch (error) {
         console.error('Login error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Change password endpoint
+app.post('/api/auth/change-password', async (req, res) => {
+    try {
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+        
+        // Validate input
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({ error: 'All password fields are required' });
+        }
+        
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ error: 'New password and confirmation do not match' });
+        }
+        
+        if (newPassword.length < 8) {
+            return res.status(400).json({ error: 'New password must be at least 8 characters long' });
+        }
+        
+        // Get user from token
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Authentication token required' });
+        }
+        
+        const token = authHeader.substring(7);
+        let decoded;
+        
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (error) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+        
+        // Read database and find admin
+        const db = await readDatabase();
+        const adminIndex = db.adminAccounts.findIndex(acc => acc.id === decoded.id);
+        
+        if (adminIndex === -1) {
+            return res.status(404).json({ error: 'Admin account not found' });
+        }
+        
+        const admin = db.adminAccounts[adminIndex];
+        
+        // Verify current password
+        if (admin.password !== currentPassword) {
+            return res.status(401).json({ error: 'Current password is incorrect' });
+        }
+        
+        // Update password
+        db.adminAccounts[adminIndex].password = newPassword;
+        
+        // Save to database
+        const success = await writeDatabase(db);
+        
+        if (success) {
+            res.json({ 
+                success: true, 
+                message: 'Password changed successfully' 
+            });
+        } else {
+            res.status(500).json({ error: 'Failed to update password' });
+        }
+        
+    } catch (error) {
+        console.error('Change password error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
