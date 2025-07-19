@@ -810,12 +810,22 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, '0.0.0.0', async () => {
-    // Initialize database on startup
-    await initializeDatabase();
-    
-    console.log(`🚚 YangLogistics API Server running on port ${PORT}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-    console.log(`🌐 API Base: http://localhost:${PORT}`);
+    try {
+        // Setup Railway persistent storage
+        const { setupRailwayPersistentStorage } = require('./setup-railway-persistent-storage');
+        await setupRailwayPersistentStorage();
+        
+        // Initialize database on startup
+        await initializeDatabase();
+        
+        console.log(`🚚 YangLogistics API Server running on port ${PORT}`);
+        console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+        console.log(`🌐 API Base: http://localhost:${PORT}`);
+        console.log(`💾 Database: ${DATABASE_PATH}`);
+    } catch (error) {
+        console.error('❌ Error during server startup:', error);
+        process.exit(1);
+    }
 });
 
 module.exports = app; 

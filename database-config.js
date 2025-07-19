@@ -12,8 +12,8 @@ const config = {
     
     // Production (Railway/Heroku/etc)
     production: {
-        // Use environment variable for production database path
-        databasePath: process.env.DATABASE_PATH || '/app/database.json',
+        // Use Railway's persistent storage directory
+        databasePath: process.env.DATABASE_PATH || '/tmp/database.json',
         description: 'Production database (persistent storage)',
         allowOverwrite: false,
         backupOnStart: true,
@@ -45,8 +45,8 @@ if (isProduction) {
     
     // Check if we're trying to use a local database path
     if (currentConfig.databasePath.includes('database.json') && 
-        !currentConfig.databasePath.startsWith('/app') && 
-        !currentConfig.databasePath.startsWith('/tmp')) {
+        !currentConfig.databasePath.startsWith('/tmp') && 
+        !currentConfig.databasePath.startsWith('/app')) {
         console.error('❌ CRITICAL: Production environment detected but using local database path!');
         console.error('This could cause data loss. Please check your DATABASE_PATH environment variable.');
         process.exit(1);
