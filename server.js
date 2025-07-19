@@ -332,6 +332,54 @@ app.get('/api/admins/:adminId', async (req, res) => {
     }
 });
 
+// Admin password management endpoint (no authentication required)
+app.post('/api/admins/:adminId/change-password', async (req, res) => {
+    try {
+        const { adminId } = req.params;
+        const { newPassword, confirmPassword } = req.body;
+        
+        // Validate input
+        if (!newPassword || !confirmPassword) {
+            return res.status(400).json({ error: 'New password and confirmation are required' });
+        }
+        
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ error: 'New password and confirmation do not match' });
+        }
+        
+        if (newPassword.length < 8) {
+            return res.status(400).json({ error: 'New password must be at least 8 characters long' });
+        }
+        
+        // Read database and find admin by ID
+        const db = await readDatabase();
+        const adminIndex = db.adminAccounts.findIndex(acc => acc.id === adminId);
+        
+        if (adminIndex === -1) {
+            return res.status(404).json({ error: 'Admin account not found' });
+        }
+        
+        // Update password
+        db.adminAccounts[adminIndex].password = newPassword;
+        
+        // Save to database
+        const success = await writeDatabase(db);
+        
+        if (success) {
+            res.json({ 
+                success: true, 
+                message: 'Admin password changed successfully' 
+            });
+        } else {
+            res.status(500).json({ error: 'Failed to update admin password' });
+        }
+        
+    } catch (error) {
+        console.error('Admin password change error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.post('/api/auth/signup', async (req, res) => {
     try {
         const { firstName, lastName, email, phone, company, role, password } = req.body;

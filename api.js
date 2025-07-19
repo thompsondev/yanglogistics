@@ -108,6 +108,13 @@ class LogisticsAPI {
         return await this.request(`/admins/${adminId}`);
     }
 
+    async changeAdminPassword(adminId, newPassword, confirmPassword) {
+        return await this.request(`/admins/${adminId}/change-password`, {
+            method: 'POST',
+            body: JSON.stringify({ newPassword, confirmPassword })
+        });
+    }
+
     // Orders CRUD methods
     async getOrders(filters = {}) {
         const params = new URLSearchParams();
