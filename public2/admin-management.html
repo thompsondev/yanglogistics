@@ -147,6 +147,54 @@
         </div>
     </section>
 
+    <!-- Change Admin Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-key"></i> Change Admin Password</h2>
+                <span class="close" onclick="closeChangePasswordModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="changeAdminPasswordForm">
+                    <div class="form-group">
+                        <label for="adminEmail">Admin Email</label>
+                        <input type="email" id="adminEmail" name="adminEmail" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminName">Admin Name</label>
+                        <input type="text" id="adminName" name="adminName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="newAdminPassword">New Password</label>
+                        <div class="input-group">
+                            <input type="password" id="newAdminPassword" name="newAdminPassword" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('newAdminPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength" id="adminPasswordStrength"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmAdminPassword">Confirm New Password</label>
+                        <div class="input-group">
+                            <input type="password" id="confirmAdminPassword" name="confirmAdminPassword" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirmAdminPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-match" id="adminPasswordMatch"></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Change Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Footer Container -->
     <div id="global-footer"></div>
 
@@ -264,6 +312,9 @@
                             <button class="btn-icon btn-update" onclick="editAdmin('${admin.id}')" title="Edit Admin">
                                 <i class="fas fa-edit"></i>
                             </button>
+                            <button class="btn-icon btn-password" onclick="changeAdminPassword('${admin.id}', '${admin.email}', '${admin.firstName} ${admin.lastName}')" title="Change Password">
+                                <i class="fas fa-key"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -352,6 +403,160 @@
                 alert(message);
             }
         }
+
+        // Change Admin Password Functions
+        let currentAdminId = null;
+
+        function changeAdminPassword(adminId, adminEmail, adminName) {
+            // Store the admin ID for later use
+            currentAdminId = adminId;
+            
+            // Populate modal with admin info
+            document.getElementById('adminEmail').value = adminEmail;
+            document.getElementById('adminName').value = adminName;
+            
+            // Clear previous form data
+            document.getElementById('newAdminPassword').value = '';
+            document.getElementById('confirmAdminPassword').value = '';
+            document.getElementById('adminPasswordStrength').innerHTML = '';
+            document.getElementById('adminPasswordMatch').innerHTML = '';
+            
+            // Show modal
+            document.getElementById('changePasswordModal').style.display = 'block';
+            
+            // Setup form event listeners
+            setupPasswordChangeForm();
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+        }
+
+        function setupPasswordChangeForm() {
+            const form = document.getElementById('changeAdminPasswordForm');
+            const newPasswordInput = document.getElementById('newAdminPassword');
+            const confirmPasswordInput = document.getElementById('confirmAdminPassword');
+            const passwordStrengthDiv = document.getElementById('adminPasswordStrength');
+            const passwordMatchDiv = document.getElementById('adminPasswordMatch');
+
+            // Password strength checker
+            function updatePasswordStrength(password) {
+                let strength = 0;
+                let feedback = '';
+
+                if (password.length >= 8) strength++;
+                if (password.length >= 12) strength++;
+                if (/[a-z]/.test(password)) strength++;
+                if (/[A-Z]/.test(password)) strength++;
+                if (/[0-9]/.test(password)) strength++;
+                if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+                if (strength < 3) {
+                    feedback = '<span class="text-danger"><i class="fas fa-times"></i> Weak password</span>';
+                } else if (strength < 5) {
+                    feedback = '<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Medium strength</span>';
+                } else {
+                    feedback = '<span class="text-success"><i class="fas fa-check"></i> Strong password</span>';
+                }
+
+                passwordStrengthDiv.innerHTML = feedback;
+            }
+
+            // Password match checker
+            function checkPasswordMatch() {
+                const newPassword = newPasswordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                if (confirmPassword === '') {
+                    passwordMatchDiv.innerHTML = '';
+                    return;
+                }
+
+                if (newPassword === confirmPassword) {
+                    passwordMatchDiv.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Passwords match</span>';
+                } else {
+                    passwordMatchDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times"></i> Passwords do not match</span>';
+                }
+            }
+
+            // Event listeners
+            newPasswordInput.addEventListener('input', function() {
+                updatePasswordStrength(this.value);
+                checkPasswordMatch();
+            });
+
+            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+            // Form submission
+            form.onsubmit = async function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                // Validation
+                if (!data.newAdminPassword || !data.confirmAdminPassword) {
+                    showNotification('Please fill in all password fields', 'error');
+                    return;
+                }
+
+                if (data.newAdminPassword !== data.confirmAdminPassword) {
+                    showNotification('New password and confirmation do not match', 'error');
+                    return;
+                }
+
+                if (data.newAdminPassword.length < 8) {
+                    showNotification('New password must be at least 8 characters long', 'error');
+                    return;
+                }
+
+                try {
+                    showLoading('Changing admin password...');
+
+                    // Use the admin password change API
+                    const response = await api.changeAdminPassword(
+                        currentAdminId,
+                        data.newAdminPassword,
+                        data.confirmAdminPassword
+                    );
+
+                    if (response.success) {
+                        showNotification('Admin password changed successfully!', 'success');
+                        closeChangePasswordModal();
+                    } else {
+                        showNotification(response.error || 'Failed to change admin password', 'error');
+                    }
+
+                    hideLoading();
+                } catch (error) {
+                    console.error('Change admin password error:', error);
+                    showNotification('Failed to change admin password. Please try again.', 'error');
+                    hideLoading();
+                }
+            };
+        }
+
+        // Password visibility toggle
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const toggleBtn = input.parentNode.querySelector('.password-toggle i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggleBtn.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                toggleBtn.className = 'fas fa-eye';
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('changePasswordModal');
+            if (event.target === modal) {
+                closeChangePasswordModal();
+            }
+        }
     </script>
 
     <style>
@@ -411,6 +616,181 @@
 
         .admin-info strong {
             color: #1f2937;
+        }
+
+        /* Password change button styles */
+        .btn-password {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .btn-password:hover {
+            background: #7c3aed;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border: none;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .close {
+            color: #6b7280;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #1f2937;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-body .form-group {
+            margin-bottom: 20px;
+        }
+
+        .modal-body label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .modal-body input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .modal-body input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .modal-body input[readonly] {
+            background-color: #f9fafb;
+            color: #6b7280;
+        }
+
+        .modal-body .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .modal-body .input-group input {
+            padding-right: 50px;
+        }
+
+        .modal-body .password-toggle {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-body .password-toggle:hover {
+            color: #374151;
+        }
+
+        .modal-body .password-strength,
+        .modal-body .password-match {
+            margin-top: 8px;
+            font-size: 0.875rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .modal-actions .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-actions .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .modal-actions .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .modal-actions .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border: 1px solid #3b82f6;
+        }
+
+        .modal-actions .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        /* Text colors for password feedback */
+        .text-danger {
+            color: #dc2626;
+        }
+
+        .text-warning {
+            color: #d97706;
+        }
+
+        .text-success {
+            color: #059669;
         }
     </style>
 </body>

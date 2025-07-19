@@ -91,10 +91,10 @@ class LogisticsAPI {
         });
     }
 
-    async changePassword(currentPassword, newPassword, confirmPassword) {
+    async changePassword(email, currentPassword, newPassword, confirmPassword) {
         return await this.request('/auth/change-password', {
             method: 'POST',
-            body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+            body: JSON.stringify({ email, currentPassword, newPassword, confirmPassword })
         });
     }
 
@@ -105,6 +105,13 @@ class LogisticsAPI {
 
     async getAdmin(adminId) {
         return await this.request(`/admins/${adminId}`);
+    }
+
+    async changeAdminPassword(adminId, newPassword, confirmPassword) {
+        return await this.request(`/admins/${adminId}/change-password`, {
+            method: 'POST',
+            body: JSON.stringify({ newPassword, confirmPassword })
+        });
     }
 
     // Orders CRUD methods (public access)
