@@ -92,10 +92,10 @@ class LogisticsAPI {
         });
     }
 
-    async changePassword(currentPassword, newPassword, confirmPassword) {
+    async changePassword(email, currentPassword, newPassword, confirmPassword) {
         return await this.request('/auth/change-password', {
             method: 'POST',
-            body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+            body: JSON.stringify({ email, currentPassword, newPassword, confirmPassword })
         });
     }
 
