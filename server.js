@@ -31,6 +31,78 @@ app.use(morgan('dev'));
 // Serve static files (HTML, CSS, JS) - must be before routes
 app.use(express.static(__dirname));
 
+// URL routing for clean URLs (without .html extension)
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(__dirname, 'signup.html'));
+});
+
+app.get('/order', (req, res) => {
+    res.sendFile(path.join(__dirname, 'order.html'));
+});
+
+app.get('/tracking', (req, res) => {
+    res.sendFile(path.join(__dirname, 'tracking.html'));
+});
+
+app.get('/change-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'change-password.html'));
+});
+
+app.get('/admin-management', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin-management.html'));
+});
+
+app.get('/verify-connections', (req, res) => {
+    res.sendFile(path.join(__dirname, 'verify-connections.html'));
+});
+
+app.get('/test-auth', (req, res) => {
+    res.sendFile(path.join(__dirname, 'test-auth.html'));
+});
+
+app.get('/test-login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'test-login.html'));
+});
+
+// Catch-all route for any other HTML files
+app.get('/:page', (req, res) => {
+    const page = req.params.page;
+    
+    // Skip API routes
+    if (page.startsWith('api')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    
+    // Try to serve the HTML file
+    const htmlFile = path.join(__dirname, `${page}.html`);
+    
+    // Check if the HTML file exists
+    fs.access(htmlFile)
+        .then(() => {
+            res.sendFile(htmlFile);
+        })
+        .catch(() => {
+            // If HTML file doesn't exist, return 404
+            res.status(404).json({ 
+                error: 'Page not found',
+                message: `The page "${page}" was not found. Try adding .html extension or check the URL.`,
+                availablePages: [
+                    'index', 'admin', 'login', 'signup', 'order', 'tracking', 
+                    'change-password', 'admin-management', 'verify-connections', 
+                    'test-auth', 'test-login'
+                ]
+            });
+        });
+});
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
