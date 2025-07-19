@@ -19,9 +19,18 @@ class LogisticsAPI {
 
     // Get headers for API requests (public access)
     getHeaders() {
-        return {
+        const headers = {
             'Content-Type': 'application/json'
         };
+        
+        if (this.token) {
+            headers['Authorization'] = `Bearer ${this.token}`;
+            console.log('🔑 Adding Authorization header with token:', this.token.substring(0, 20) + '...');
+        } else {
+            console.log('⚠️ No token available for request');
+        }
+        
+        return headers;
     }
 
     // Generic API request method (public access)
@@ -33,16 +42,28 @@ class LogisticsAPI {
                 ...options
             };
 
+            console.log('🌐 Making API request to:', url);
+            console.log('📋 Request config:', {
+                method: config.method || 'GET',
+                headers: config.headers,
+                hasBody: !!config.body
+            });
+
             const response = await fetch(url, config);
+            
+            console.log('📡 Response status:', response.status);
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                console.error('❌ API request failed:', errorData);
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
 
-            return await response.json();
+            const data = await response.json();
+            console.log('✅ API request successful:', data);
+            return data;
         } catch (error) {
-            console.error('API request failed:', error);
+            console.error('❌ API request failed:', error);
             throw error;
         }
     }
@@ -68,6 +89,22 @@ class LogisticsAPI {
             method: 'POST',
             body: JSON.stringify(userData)
         });
+    }
+
+    async changePassword(currentPassword, newPassword, confirmPassword) {
+        return await this.request('/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+        });
+    }
+
+    // Admin management methods
+    async getAdmins() {
+        return await this.request('/admins');
+    }
+
+    async getAdmin(adminId) {
+        return await this.request(`/admins/${adminId}`);
     }
 
     // Orders CRUD methods (public access)

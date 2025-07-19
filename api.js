@@ -28,6 +28,9 @@ class LogisticsAPI {
         
         if (this.token) {
             headers['Authorization'] = `Bearer ${this.token}`;
+            console.log('🔑 Adding Authorization header with token:', this.token.substring(0, 20) + '...');
+        } else {
+            console.log('⚠️ No token available for request');
         }
         
         return headers;
@@ -42,16 +45,28 @@ class LogisticsAPI {
                 ...options
             };
 
+            console.log('🌐 Making API request to:', url);
+            console.log('📋 Request config:', {
+                method: config.method || 'GET',
+                headers: config.headers,
+                hasBody: !!config.body
+            });
+
             const response = await fetch(url, config);
+            
+            console.log('📡 Response status:', response.status);
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                console.error('❌ API request failed:', errorData);
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
 
-            return await response.json();
+            const data = await response.json();
+            console.log('✅ API request successful:', data);
+            return data;
         } catch (error) {
-            console.error('API request failed:', error);
+            console.error('❌ API request failed:', error);
             throw error;
         }
     }
