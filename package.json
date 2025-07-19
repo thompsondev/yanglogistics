@@ -1,5 +1,5 @@
 {
-  "name": "logistics-backend",
+  "name": "yanglogistics-backend",
   "version": "1.0.0",
   "description": "Backend API for YangLogistics management system",
   "main": "server.js",

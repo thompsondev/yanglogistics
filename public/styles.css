@@ -2544,7 +2544,6 @@ body {
     .no-result-actions {
         flex-direction: column;
     }
-}
 
 @media (max-width: 480px) {
     .tracking-header h1 {

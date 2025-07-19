@@ -1,0 +1,55 @@
+# Firebase files (not needed for Railway deployment)
+.firebase/
+firebase.json
+.firebaserc
+functions/
+
+# Development files
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+backups/
+*.backup
+*.bak
+
+# Test files
+test-*.html
+test-*.js
+test-*.json
+
+# Documentation
+*.md
+!README.md
+
+# Git
+.git/
+.gitignore
+
+# Temporary files
+*.tmp
+*.temp
+
+# Corrupted or problematic files
+functions/
+.firebase/ 
