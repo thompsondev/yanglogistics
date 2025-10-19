@@ -150,7 +150,7 @@ function validateLoginData(data) {
 // Enhanced signup validation with mobile optimization
 function validateSignupData(data) {
     // Check required fields with mobile-friendly error messages
-    const requiredFields = ['name', 'email', 'password', 'confirmPassword'];
+    const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'company', 'role', 'password', 'confirmPassword'];
     
     for (const field of requiredFields) {
         if (!data[field] || data[field].trim() === '') {
@@ -174,6 +174,19 @@ function validateSignupData(data) {
         if (emailField && window.innerWidth <= 768) {
             emailField.scrollIntoView({ behavior: 'smooth', block: 'center' });
             emailField.focus();
+        }
+        return false;
+    }
+    
+    // Enhanced phone validation
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    const cleanPhone = data.phone.replace(/\s/g, '');
+    if (!phoneRegex.test(cleanPhone)) {
+        showNotification('Please enter a valid phone number.', 'error');
+        const phoneField = document.getElementById('phone');
+        if (phoneField && window.innerWidth <= 768) {
+            phoneField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            phoneField.focus();
         }
         return false;
     }
