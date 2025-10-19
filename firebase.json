@@ -5,6 +5,36 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/login",
+        "destination": "/login.html"
+      },
+      {
+        "source": "/admin",
+        "destination": "/admin.html"
+      },
+      {
+        "source": "/order",
+        "destination": "/order.html"
+      },
+      {
+        "source": "/tracking",
+        "destination": "/tracking.html"
+      },
+      {
+        "source": "/signup",
+        "destination": "/signup.html"
+      },
+      {
+        "source": "/admin-management",
+        "destination": "/admin-management.html"
+      },
+      {
+        "source": "/change-password",
+        "destination": "/change-password.html"
+      }
     ]
   }
 }
