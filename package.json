@@ -16,8 +16,7 @@
     "fix-database": "node scripts/fix-database-overwrite.js",
     "check-deployment": "node scripts/check-deployment-safety.js",
     "predeploy": "npm run check-deployment",
-    "restore-prod": "node restore-production-data.js",
-    "setup-railway": "node setup-railway-persistent-storage.js"
+    "restore-prod": "node restore-production-data.js"
   },
   "keywords": [
     "logistics",

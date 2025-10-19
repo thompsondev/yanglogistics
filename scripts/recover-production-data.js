@@ -91,27 +91,27 @@ async function recoverProductionData() {
         console.log('========================');
         console.log('\n1. MANUAL RECOVERY (Recommended):');
         console.log('   - Copy the backup file content');
-        console.log('   - Go to your Railway dashboard');
+        console.log('   - Go to your Coolify dashboard');
         console.log('   - Navigate to your app\'s persistent storage');
         console.log('   - Replace the database.json content with the backup');
-        console.log('   - Restart your Railway app');
+        console.log('   - Restart your Coolify app');
         
-        console.log('\n2. AUTOMATIC RECOVERY (If you have Railway CLI):');
-        console.log('   - Install Railway CLI: npm install -g @railway/cli');
-        console.log('   - Login: railway login');
-        console.log('   - Upload backup: railway up --file backups/' + bestBackup.file);
+        console.log('\n2. AUTOMATIC RECOVERY (If you have Coolify CLI):');
+        console.log('   - Install Coolify CLI: npm install -g @coolify/cli');
+        console.log('   - Login: coolify login');
+        console.log('   - Upload backup: coolify deploy --file backups/' + bestBackup.file);
         
         console.log('\n3. PREVENT FUTURE ISSUES:');
         console.log('   - Run: npm run fix-database');
         console.log('   - Always run: npm run check-deployment before deploying');
-        console.log('   - Set up automatic backups in Railway');
+        console.log('   - Set up automatic backups in Coolify');
         
-        // 6. Create a Railway-compatible backup
-        console.log('\n💾 Creating Railway-compatible backup...');
-        const railwayBackupPath = path.join(__dirname, '..', 'railway-recovery-backup.json');
-        await fs.writeFile(railwayBackupPath, JSON.stringify(bestBackup.data, null, 2), 'utf8');
-        console.log(`✅ Created: ${railwayBackupPath}`);
-        console.log('   This file can be uploaded directly to Railway');
+        // 6. Create a Coolify-compatible backup
+        console.log('\n💾 Creating Coolify-compatible backup...');
+        const coolifyBackupPath = path.join(__dirname, '..', 'coolify-recovery-backup.json');
+        await fs.writeFile(coolifyBackupPath, JSON.stringify(bestBackup.data, null, 2), 'utf8');
+        console.log(`✅ Created: ${coolifyBackupPath}`);
+        console.log('   This file can be uploaded directly to Coolify');
         
         // 7. Create deployment safety file
         console.log('\n🛡️ Creating deployment safety file...');
@@ -128,7 +128,7 @@ Your production database was recently overwritten by local data. To prevent this
 3. Verify .gitignore excludes database files
 
 ### Recovery Files:
-- Railway Recovery Backup: \`railway-recovery-backup.json\`
+- Coolify Recovery Backup: \`coolify-recovery-backup.json\`
 - Original Backup: \`backups/${bestBackup.file}\`
 
 ### Safety Commands:
@@ -136,8 +136,8 @@ Your production database was recently overwritten by local data. To prevent this
 - \`npm run check-deployment\` - Verify deployment safety
 - \`npm run backup-database\` - Create backup before changes
 
-### Railway Environment Variables:
-Set these in your Railway dashboard:
+### Coolify Environment Variables:
+Set these in your Coolify dashboard:
 - \`DATABASE_PATH=/app/database.json\`
 - \`NODE_ENV=production\`
 
@@ -149,9 +149,9 @@ Set these in your Railway dashboard:
         
         console.log('\n🎉 Recovery script completed!');
         console.log('\n📋 Next Steps:');
-        console.log('1. Use the recovery backup to restore your Railway database');
+        console.log('1. Use the recovery backup to restore your Coolify database');
         console.log('2. Run: npm run fix-database to prevent future issues');
-        console.log('3. Set up automatic backups in Railway dashboard');
+        console.log('3. Set up automatic backups in Coolify dashboard');
         console.log('4. Always run: npm run check-deployment before deploying');
         
     } catch (error) {

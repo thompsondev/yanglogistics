@@ -5,10 +5,10 @@ const config = {
         API_BASE_URL: 'http://localhost:3000/api'
     },
     
-    // Production (Railway/Heroku/etc)
+    // Production (Coolify/Heroku/etc)
     production: {
-        // Replace this with your actual Railway URL once deployed
-        API_BASE_URL: 'https://yanglogistics-production.up.railway.app/api'
+        // Replace this with your actual Coolify URL once deployed
+        API_BASE_URL: 'https://logistics.digitalcoresystem.com/api'
     }
 };
 

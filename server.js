@@ -222,12 +222,12 @@ function generateOrderId() {
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
-        message: 'YangLogistics API is running on Railway',
+        message: 'YangLogistics API is running on Coolify',
         timestamp: new Date().toISOString()
     });
 });
 
-// Root route for Railway
+// Root route
 app.get('/', (req, res) => {
     res.json({ 
         message: 'YangLogistics API Server',
@@ -937,10 +937,6 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, '0.0.0.0', async () => {
     try {
-        // Setup Railway persistent storage
-        const { setupRailwayPersistentStorage } = require('./setup-railway-persistent-storage');
-        await setupRailwayPersistentStorage();
-        
         // Initialize database on startup
         await initializeDatabase();
         

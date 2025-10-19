@@ -10,7 +10,7 @@ Your production database was recently overwritten by local data. To prevent this
 3. Verify .gitignore excludes database files
 
 ### Recovery Files:
-- Railway Recovery Backup: `railway-recovery-backup.json`
+- Coolify Recovery Backup: `coolify-recovery-backup.json`
 - Original Backup: `backups/database-backup-2025-07-17T11-53-39-040Z.json`
 
 ### Safety Commands:
@@ -18,8 +18,8 @@ Your production database was recently overwritten by local data. To prevent this
 - `npm run check-deployment` - Verify deployment safety
 - `npm run backup-database` - Create backup before changes
 
-### Railway Environment Variables:
-Set these in your Railway dashboard:
+### Coolify Environment Variables:
+Set these in your Coolify dashboard:
 - `DATABASE_PATH=/app/database.json`
 - `NODE_ENV=production`
 

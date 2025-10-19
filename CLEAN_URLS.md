@@ -111,7 +111,7 @@ Try these URLs in your browser:
 1. **API routes are protected** - `/api/` routes won't be affected
 2. **Static files work normally** - CSS, JS, images still work
 3. **404 pages are helpful** - Shows available pages if URL is wrong
-4. **Works on Railway** - The Express.js routes handle this
+4. **Works on Coolify** - The Express.js routes handle this
 5. **Works on Apache** - The .htaccess file handles this
 
 ## **🎉 Result:**

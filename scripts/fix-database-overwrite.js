@@ -212,7 +212,7 @@ checkDeploymentSafety();
         console.log('\n📋 Next steps:');
         console.log('1. Run: npm run check-deployment (before each deployment)');
         console.log('2. Use database-template.json for local development');
-        console.log('3. Your production database on Railway is now safe');
+        console.log('3. Your production database on Coolify is now safe');
         console.log('4. Consider setting up automatic backups');
         
     } catch (error) {
