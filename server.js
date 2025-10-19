@@ -10,6 +10,17 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const morgan = require('morgan');
 
+// Import error handling system
+const { 
+    createError, 
+    errorHandler, 
+    notFoundHandler, 
+    asyncHandler, 
+    validateRequired, 
+    validateEmail, 
+    validatePhone 
+} = require('./errorHandler');
+
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy for correct client IP and rate limiting
 const PORT = process.env.PORT || 3000;
@@ -237,52 +248,49 @@ app.get('/', (req, res) => {
 });
 
 // Authentication routes
-app.post('/api/auth/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required' });
-        }
+app.post('/api/auth/login', asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+    
+    // Validate required fields
+    validateRequired(req.body, ['email', 'password']);
+    
+    // Validate email format
+    validateEmail(email);
 
-        const db = await readDatabase();
-        const admin = db.adminAccounts.find(acc => acc.email.toLowerCase() === email.toLowerCase());
+    const db = await readDatabase();
+    const admin = db.adminAccounts.find(acc => acc.email.toLowerCase() === email.toLowerCase());
 
-        if (!admin) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        // In production, use bcrypt.compare(password, admin.password)
-        if (password !== admin.password) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        const token = jwt.sign(
-            { 
-                id: admin.id, 
-                email: admin.email, 
-                role: admin.role 
-            }, 
-            JWT_SECRET, 
-            { expiresIn: '24h' }
-        );
-
-        res.json({
-            success: true,
-            token,
-            user: {
-                id: admin.id,
-                email: admin.email,
-                firstName: admin.firstName,
-                lastName: admin.lastName,
-                role: admin.role
-            }
-        });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    if (!admin) {
+        throw createError.invalidCredentials('User account not found');
     }
-});
+
+    // In production, use bcrypt.compare(password, admin.password)
+    if (password !== admin.password) {
+        throw createError.invalidCredentials('Invalid password');
+    }
+
+    const token = jwt.sign(
+        { 
+            id: admin.id, 
+            email: admin.email, 
+            role: admin.role 
+        }, 
+        JWT_SECRET, 
+        { expiresIn: '24h' }
+    );
+
+    res.json({
+        success: true,
+        token,
+        user: {
+            id: admin.id,
+            email: admin.email,
+            firstName: admin.firstName,
+            lastName: admin.lastName,
+            role: admin.role
+        }
+    });
+}));
 
 // Change password endpoint (no authentication required)
 app.post('/api/auth/change-password', async (req, res) => {
@@ -554,86 +562,96 @@ app.get('/api/orders', async (req, res) => {
 });
 
 // Allow anyone to create an order (no authentication)
-app.post('/api/orders', async (req, res) => {
-    try {
-        const {
-            customerName,
-            customerEmail,
-            customerPhone,
-            pickupAddress,
-            deliveryAddress,
-            serviceType,
-            packageDetails,
-            specialInstructions
-        } = req.body;
+app.post('/api/orders', asyncHandler(async (req, res) => {
+    const {
+        customerName,
+        customerEmail,
+        customerPhone,
+        pickupAddress,
+        deliveryAddress,
+        serviceType,
+        packageDetails,
+        specialInstructions
+    } = req.body;
 
-        if (!customerName || !customerEmail || !customerPhone || !pickupAddress || !deliveryAddress || !serviceType) {
-            return res.status(400).json({ error: 'Required fields are missing' });
-        }
-        
-        // Handle both old format (direct weight) and new format (packageDetails)
-        let weight, description, quantity;
-        if (packageDetails) {
-            weight = packageDetails.weight;
-            description = packageDetails.description;
-            quantity = packageDetails.quantity;
-        } else {
-            weight = req.body.weight;
-            description = req.body.description;
-            quantity = req.body.quantity || 1;
-        }
-        
-        if (!weight || isNaN(parseFloat(weight))) {
-            return res.status(400).json({ error: 'Invalid or missing weight.' });
-        }
-
-        const db = await readDatabase();
-
-        const order = {
-            id: generateOrderId(),
-            trackingNumber: generateTrackingNumber(),
-            customerName,
-            customerEmail,
-            customerPhone,
-            pickupAddress,
-            deliveryAddress,
-            serviceType,
-            packageDetails: {
-                weight: parseFloat(weight),
-                description: description || '',
-                quantity: parseInt(quantity) || 1
-            },
-            specialInstructions: specialInstructions || '',
-            status: 'Order Placed',
-            currentStage: 'Order Placed',
-            price: calculatePrice(serviceType, weight),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            estimatedDelivery: calculateEstimatedDelivery(serviceType),
-            stages: [
-                {
-                    stage: 'Order Placed',
-                    timestamp: new Date().toISOString(),
-                    location: 'Online',
-                    description: 'Order received and confirmed'
-                }
-            ]
-        };
-
-        db.orders.push(order);
-        await writeDatabase(db);
-
-        res.status(201).json({
-            success: true,
-            order,
-            message: 'Order created successfully'
-        });
-
-    } catch (error) {
-        console.error('Create order error:', error);
-        res.status(500).json({ error: 'Internal server error (create order)', details: error.message });
+    // Validate required fields
+    validateRequired(req.body, [
+        'customerName', 
+        'customerEmail', 
+        'customerPhone', 
+        'pickupAddress', 
+        'deliveryAddress', 
+        'serviceType'
+    ]);
+    
+    // Validate email format
+    validateEmail(customerEmail);
+    
+    // Validate phone format
+    validatePhone(customerPhone);
+    
+    // Handle both old format (direct weight) and new format (packageDetails)
+    let weight, description, quantity;
+    if (packageDetails) {
+        weight = packageDetails.weight;
+        description = packageDetails.description;
+        quantity = packageDetails.quantity;
+    } else {
+        weight = req.body.weight;
+        description = req.body.description;
+        quantity = req.body.quantity || 1;
     }
-});
+    
+    if (!weight || isNaN(parseFloat(weight))) {
+        throw createError.validation('Invalid or missing weight', 'weight', 'Weight must be a valid number');
+    }
+    
+    if (parseFloat(weight) <= 0) {
+        throw createError.validation('Weight must be greater than 0', 'weight', 'Please enter a valid weight');
+    }
+
+    const db = await readDatabase();
+
+    const order = {
+        id: generateOrderId(),
+        trackingNumber: generateTrackingNumber(),
+        customerName,
+        customerEmail,
+        customerPhone,
+        pickupAddress,
+        deliveryAddress,
+        serviceType,
+        packageDetails: {
+            weight: parseFloat(weight),
+            description: description || '',
+            quantity: parseInt(quantity) || 1
+        },
+        specialInstructions: specialInstructions || '',
+        status: 'Order Placed',
+        currentStage: 'Order Placed',
+        price: calculatePrice(serviceType, weight),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        estimatedDelivery: calculateEstimatedDelivery(serviceType),
+        stages: [
+            {
+                stage: 'Order Placed',
+                timestamp: new Date().toISOString(),
+                location: 'Online',
+                description: 'Order received and confirmed'
+            }
+        ]
+    };
+
+    db.orders.push(order);
+    await writeDatabase(db);
+
+    res.status(201).json({
+        success: true,
+        order,
+        message: 'Order created successfully'
+    });
+}));
 
 app.get('/api/orders/:id', async (req, res) => {
     try {
@@ -774,26 +792,25 @@ app.patch('/api/orders/:id/status', async (req, res) => {
 });
 
 // Tracking route (public, no authentication)
-app.get('/api/track/:trackingNumber', async (req, res) => {
-    try {
-        const { trackingNumber } = req.params;
-        const db = await readDatabase();
-
-        const order = db.orders.find(o => 
-            o.trackingNumber.toLowerCase() === trackingNumber.toLowerCase()
-        );
-
-        if (!order) {
-            return res.status(404).json({ error: 'Tracking number not found' });
-        }
-
-        res.json(order);
-
-    } catch (error) {
-        console.error('Tracking error:', error);
-        res.status(500).json({ error: 'Internal server error (tracking)', details: error.message });
+app.get('/api/track/:trackingNumber', asyncHandler(async (req, res) => {
+    const { trackingNumber } = req.params;
+    
+    if (!trackingNumber || trackingNumber.trim() === '') {
+        throw createError.validation('Tracking number is required', 'trackingNumber');
     }
-});
+    
+    const db = await readDatabase();
+
+    const order = db.orders.find(o => 
+        o.trackingNumber.toLowerCase() === trackingNumber.toLowerCase()
+    );
+
+    if (!order) {
+        throw createError.orderNotFound(trackingNumber);
+    }
+
+    res.json(order);
+}));
 
 // Dashboard statistics
 app.get('/api/dashboard/stats', async (req, res) => {
@@ -918,21 +935,11 @@ function calculatePrice(serviceType, weight) {
 }
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
-});
+// 404 handler for undefined routes
+app.use(notFoundHandler);
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ error: 'Route not found' });
-});
-
-// Catch-all error handler
-app.use((err, req, res, next) => {
-    console.error('Unhandled error:', err);
-    res.status(500).json({ error: 'Something went wrong (unhandled error)', details: err.message });
-});
+// Professional error handling middleware (must be last)
+app.use(errorHandler);
 
 // Start server
 app.listen(PORT, '0.0.0.0', async () => {
