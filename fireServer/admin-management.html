@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Management - YangLogistics</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-text">YangLogistics</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="index.html#services" class="nav-link">Services</a>
+                <a href="index.html#about" class="nav-link">About</a>
+                <a href="index.html#solutions" class="nav-link">Solutions</a>
+                <a href="index.html#contact" class="nav-link">Contact</a>
+                <a href="tracking.html" class="nav-link">Track Package</a>
+                <a href="order.html" class="nav-link">Place Order</a>
+                <a href="admin.html" class="nav-link">Admin</a>
+                <a href="admin-management.html" class="nav-link active">Admin Management</a>
+                <a href="change-password.html" class="nav-link"><i class="fas fa-key"></i> Change Password</a>
+                <a href="#" class="nav-link" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Management Section -->
+    <section class="admin-section">
+        <div class="container">
+            <div class="admin-header">
+                <h1><i class="fas fa-users-cog"></i> Admin Management</h1>
+                <p>View and manage all admin accounts in the system</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="totalAdmins">0</h3>
+                        <p>Total Admins</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="activeAdmins">0</h3>
+                        <p>Active Admins</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="superAdmins">0</h3>
+                        <p>Super Admins</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="recentLogins">0</h3>
+                        <p>Recent Logins</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="admin-controls">
+                <div class="search-box">
+                    <input type="text" id="searchAdmins" placeholder="Search by name, email, or role...">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="filter-controls">
+                    <select id="roleFilter">
+                        <option value="">All Roles</option>
+                        <option value="super_admin">Super Admin</option>
+                        <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Admins Table -->
+            <div class="orders-table-container">
+                <div class="table-header">
+                    <h3>All Admin Accounts</h3>
+                    <button onclick="refreshAdmins()" class="btn btn-secondary">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button onclick="testNotification()" class="btn btn-secondary" style="margin-left: 10px;">
+                        <i class="fas fa-bell"></i> Test Notification
+                    </button>
+                </div>
+                
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p>Loading admin data...</p>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Role</th>
+                                <th>Company</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminsTableBody">
+                            <!-- Admins will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Change Admin Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-key"></i> Change Admin Password</h2>
+                <span class="close" onclick="closeChangePasswordModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="changeAdminPasswordForm">
+                    <div class="form-group">
+                        <label for="adminEmail">Admin Email</label>
+                        <input type="email" id="adminEmail" name="adminEmail" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminName">Admin Name</label>
+                        <input type="text" id="adminName" name="adminName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="newAdminPassword">New Password</label>
+                        <div class="input-group">
+                            <input type="password" id="newAdminPassword" name="newAdminPassword" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('newAdminPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength" id="adminPasswordStrength"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmAdminPassword">Confirm New Password</label>
+                        <div class="input-group">
+                            <input type="password" id="confirmAdminPassword" name="confirmAdminPassword" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirmAdminPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-match" id="adminPasswordMatch"></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Change Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Footer Container -->
+    <div id="global-footer"></div>
+
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+    <script src="components/footer.js"></script>
+    <script>
+        // Admin management functionality
+        let allAdmins = [];
+        let filteredAdmins = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Initialize page
+            loadAdmins();
+            setupEventListeners();
+        });
+
+        async function loadAdmins() {
+            try {
+                showLoading();
+                
+                const response = await api.getAdmins();
+                
+                if (response.success) {
+                    allAdmins = response.admins;
+                    filteredAdmins = [...allAdmins];
+                    updateStats();
+                    renderAdminsTable();
+                } else {
+                    showNotification('Failed to load admin data', 'error');
+                }
+                
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading admins:', error);
+                showNotification('Failed to load admin data', 'error');
+                hideLoading();
+            }
+        }
+
+        function updateStats() {
+            const totalAdmins = allAdmins.length;
+            const activeAdmins = allAdmins.filter(admin => admin.isActive).length;
+            const superAdmins = allAdmins.filter(admin => admin.role === 'super_admin').length;
+            const recentLogins = allAdmins.filter(admin => admin.lastLogin).length;
+
+            document.getElementById('totalAdmins').textContent = totalAdmins;
+            document.getElementById('activeAdmins').textContent = activeAdmins;
+            document.getElementById('superAdmins').textContent = superAdmins;
+            document.getElementById('recentLogins').textContent = recentLogins;
+        }
+
+        function renderAdminsTable() {
+            const tbody = document.getElementById('adminsTableBody');
+            
+            if (filteredAdmins.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="no-orders">
+                            <i class="fas fa-users-slash"></i>
+                            <h3>No admin accounts found</h3>
+                            <p>No admin accounts match your current filters.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredAdmins.map(admin => `
+                <tr>
+                    <td>
+                        <span class="admin-id">${admin.id}</span>
+                    </td>
+                    <td>
+                        <div class="admin-info">
+                            <strong>${admin.firstName} ${admin.lastName}</strong>
+                        </div>
+                    </td>
+                    <td>
+                        <a href="mailto:${admin.email}" class="email-link">
+                            ${admin.email}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="tel:${admin.phone}" class="phone-link">
+                            ${admin.phone}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="role-badge role-${admin.role}">
+                            ${formatRole(admin.role)}
+                        </span>
+                    </td>
+                    <td>${admin.company || 'N/A'}</td>
+                    <td>
+                        <span class="status-badge status-${admin.isActive ? 'active' : 'inactive'}">
+                            ${admin.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td>${formatDate(admin.createdAt)}</td>
+                    <td>${admin.lastLogin ? formatDate(admin.lastLogin) : 'Never'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-icon btn-view" onclick="viewAdmin('${admin.id}')" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon btn-update" onclick="editAdmin('${admin.id}')" title="Edit Admin">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon btn-password" onclick="changeAdminPassword('${admin.id}', '${admin.email}', '${admin.firstName} ${admin.lastName}')" title="Change Password">
+                                <i class="fas fa-key"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function formatRole(role) {
+            const roleMap = {
+                'super_admin': 'Super Admin',
+                'admin': 'Admin',
+                'manager': 'Manager'
+            };
+            return roleMap[role] || role;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('searchAdmins').addEventListener('input', function() {
+                filterAdmins();
+            });
+
+            // Filter functionality
+            document.getElementById('roleFilter').addEventListener('change', function() {
+                filterAdmins();
+            });
+
+            document.getElementById('statusFilter').addEventListener('change', function() {
+                filterAdmins();
+            });
+        }
+
+        function filterAdmins() {
+            const searchTerm = document.getElementById('searchAdmins').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            filteredAdmins = allAdmins.filter(admin => {
+                const matchesSearch = 
+                    admin.firstName.toLowerCase().includes(searchTerm) ||
+                    admin.lastName.toLowerCase().includes(searchTerm) ||
+                    admin.email.toLowerCase().includes(searchTerm) ||
+                    admin.role.toLowerCase().includes(searchTerm);
+
+                const matchesRole = !roleFilter || admin.role === roleFilter;
+                const matchesStatus = !statusFilter || admin.isActive.toString() === statusFilter;
+
+                return matchesSearch && matchesRole && matchesStatus;
+            });
+
+            renderAdminsTable();
+        }
+
+        function viewAdmin(adminId) {
+            // Implement view admin details functionality
+            showNotification('View admin details functionality coming soon!', 'info');
+        }
+
+        function editAdmin(adminId) {
+            // Implement edit admin functionality
+            showNotification('Edit admin functionality coming soon!', 'info');
+        }
+
+        function refreshAdmins() {
+            loadAdmins();
+        }
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <span class="notification-message">${message}</span>
+                    <button class="notification-close">&times;</button>
+                </div>
+            `;
+            
+            // Add styles
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                max-width: 400px;
+                font-size: 1rem;
+            `;
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Close button functionality
+            const closeBtn = notification.querySelector('.notification-close');
+            closeBtn.addEventListener('click', () => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            });
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // Change Admin Password Functions
+        let currentAdminId = null;
+
+        function changeAdminPassword(adminId, adminEmail, adminName) {
+            // Store the admin ID for later use
+            currentAdminId = adminId;
+            
+            // Populate modal with admin info
+            document.getElementById('adminEmail').value = adminEmail;
+            document.getElementById('adminName').value = adminName;
+            
+            // Clear previous form data
+            document.getElementById('newAdminPassword').value = '';
+            document.getElementById('confirmAdminPassword').value = '';
+            document.getElementById('adminPasswordStrength').innerHTML = '';
+            document.getElementById('adminPasswordMatch').innerHTML = '';
+            
+            // Show modal
+            document.getElementById('changePasswordModal').style.display = 'block';
+            
+            // Setup form event listeners
+            setupPasswordChangeForm();
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+        }
+
+        function setupPasswordChangeForm() {
+            const form = document.getElementById('changeAdminPasswordForm');
+            const newPasswordInput = document.getElementById('newAdminPassword');
+            const confirmPasswordInput = document.getElementById('confirmAdminPassword');
+            const passwordStrengthDiv = document.getElementById('adminPasswordStrength');
+            const passwordMatchDiv = document.getElementById('adminPasswordMatch');
+
+            // Password strength checker
+            function updatePasswordStrength(password) {
+                let strength = 0;
+                let feedback = '';
+
+                if (password.length >= 8) strength++;
+                if (password.length >= 12) strength++;
+                if (/[a-z]/.test(password)) strength++;
+                if (/[A-Z]/.test(password)) strength++;
+                if (/[0-9]/.test(password)) strength++;
+                if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+                if (strength < 3) {
+                    feedback = '<span class="text-danger"><i class="fas fa-times"></i> Weak password</span>';
+                } else if (strength < 5) {
+                    feedback = '<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Medium strength</span>';
+                } else {
+                    feedback = '<span class="text-success"><i class="fas fa-check"></i> Strong password</span>';
+                }
+
+                passwordStrengthDiv.innerHTML = feedback;
+            }
+
+            // Password match checker
+            function checkPasswordMatch() {
+                const newPassword = newPasswordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                if (confirmPassword === '') {
+                    passwordMatchDiv.innerHTML = '';
+                    return;
+                }
+
+                if (newPassword === confirmPassword) {
+                    passwordMatchDiv.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Passwords match</span>';
+                } else {
+                    passwordMatchDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times"></i> Passwords do not match</span>';
+                }
+            }
+
+            // Event listeners
+            newPasswordInput.addEventListener('input', function() {
+                updatePasswordStrength(this.value);
+                checkPasswordMatch();
+            });
+
+            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+            // Form submission
+            form.onsubmit = async function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                // Validation
+                if (!data.newAdminPassword || !data.confirmAdminPassword) {
+                    showNotification('Please fill in all password fields', 'error');
+                    return;
+                }
+
+                if (data.newAdminPassword !== data.confirmAdminPassword) {
+                    showNotification('New password and confirmation do not match', 'error');
+                    return;
+                }
+
+                if (data.newAdminPassword.length < 8) {
+                    showNotification('New password must be at least 8 characters long', 'error');
+                    return;
+                }
+
+                try {
+                    showLoading('Changing admin password...');
+
+                    // Use the admin password change API
+                    const response = await api.changeAdminPassword(
+                        currentAdminId,
+                        data.newAdminPassword,
+                        data.confirmAdminPassword
+                    );
+
+                    if (response.success) {
+                        showNotification('Admin password changed successfully!', 'success');
+                        closeChangePasswordModal();
+                    } else {
+                        showNotification(response.error || 'Failed to change admin password', 'error');
+                    }
+
+                    hideLoading();
+                } catch (error) {
+                    console.error('Change admin password error:', error);
+                    showNotification('Failed to change admin password. Please try again.', 'error');
+                    hideLoading();
+                }
+            };
+        }
+
+        // Password visibility toggle
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const toggleBtn = input.parentNode.querySelector('.password-toggle i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggleBtn.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                toggleBtn.className = 'fas fa-eye';
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('changePasswordModal');
+            if (event.target === modal) {
+                closeChangePasswordModal();
+            }
+        }
+
+        // Test notification function
+        function testNotification() {
+            showNotification('This is a test notification!', 'success');
+        }
+    </script>
+
+    <style>
+        /* Additional styles for admin management */
+        .admin-id {
+            font-family: monospace;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .email-link, .phone-link {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .email-link:hover, .phone-link:hover {
+            text-decoration: underline;
+        }
+
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .role-super_admin {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .role-admin {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .role-manager {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .admin-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-info strong {
+            color: #1f2937;
+        }
+
+        /* Password change button styles */
+        .btn-password {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .btn-password:hover {
+            background: #7c3aed;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border: none;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .close {
+            color: #6b7280;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #1f2937;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-body .form-group {
+            margin-bottom: 20px;
+        }
+
+        .modal-body label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .modal-body input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .modal-body input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .modal-body input[readonly] {
+            background-color: #f9fafb;
+            color: #6b7280;
+        }
+
+        .modal-body .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .modal-body .input-group input {
+            padding-right: 50px;
+        }
+
+        .modal-body .password-toggle {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-body .password-toggle:hover {
+            color: #374151;
+        }
+
+        .modal-body .password-strength,
+        .modal-body .password-match {
+            margin-top: 8px;
+            font-size: 0.875rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .modal-actions .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-actions .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .modal-actions .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .modal-actions .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border: 1px solid #3b82f6;
+        }
+
+        .modal-actions .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        /* Text colors for password feedback */
+        .text-danger {
+            color: #dc2626;
+        }
+
+        .text-warning {
+            color: #d97706;
+        }
+
+        .text-success {
+            color: #059669;
+        }
+
+        /* Notification styles */
+        .notification {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .notification-message {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+        }
+
+        .notification-close:hover {
+            opacity: 1;
+        }
+    </style>
+</body>
+</html> 

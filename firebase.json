@@ -1,76 +1,10 @@
 {
   "hosting": {
-    "public": "public2",
+    "public": "fireServer",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "/admin",
-        "destination": "/admin.html"
-      },
-      {
-        "source": "/login",
-        "destination": "/login.html"
-      },
-      {
-        "source": "/signup",
-        "destination": "/signup.html"
-      },
-      {
-        "source": "/order",
-        "destination": "/order.html"
-      },
-      {
-        "source": "/tracking",
-        "destination": "/tracking.html"
-      },
-      {
-        "source": "/change-password",
-        "destination": "/change-password.html"
-      },
-      {
-        "source": "/admin-management",
-        "destination": "/admin-management.html"
-      },
-      {
-        "source": "/verify-connections",
-        "destination": "/verify-connections.html"
-      },
-      {
-        "source": "/test-auth",
-        "destination": "/test-auth.html"
-      },
-      {
-        "source": "/test-login",
-        "destination": "/test-login.html"
-      },
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "**/*.@(js|css)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=31536000"
-          }
-        ]
-      },
-      {
-        "source": "**/*.html",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
-          }
-        ]
-      }
     ]
   }
 }
