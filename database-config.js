@@ -10,10 +10,10 @@ const config = {
         backupOnStart: true
     },
     
-    // Production (Railway/Heroku/etc)
+    // Production (Railway/Heroku/Coolify/etc)
     production: {
-        // Use Railway's persistent storage directory
-        databasePath: process.env.DATABASE_PATH || '/tmp/database.json',
+        // Use persistent storage directory (Coolify/Railway/Heroku)
+        databasePath: process.env.DATABASE_PATH || '/app/data/database.json',
         description: 'Production database (persistent storage)',
         allowOverwrite: false,
         backupOnStart: true,
@@ -27,7 +27,8 @@ const config = {
 const isProduction = process.env.NODE_ENV === 'production' || 
                      process.env.RAILWAY_ENVIRONMENT === 'production' ||
                      process.env.HEROKU_APP_NAME ||
-                     process.env.RAILWAY_PROJECT_ID;
+                     process.env.RAILWAY_PROJECT_ID ||
+                     process.env.COOLIFY_APP_NAME;
 
 const currentConfig = isProduction ? config.production : config.development;
 

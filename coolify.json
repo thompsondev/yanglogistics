@@ -1,0 +1,40 @@
+{
+  "name": "yanglogistics-backend",
+  "description": "YangLogistics Backend API Server",
+  "version": "1.0.0",
+  "type": "application",
+  "framework": "nodejs",
+  "build": {
+    "type": "dockerfile",
+    "dockerfile": "Dockerfile"
+  },
+  "environment": {
+    "NODE_ENV": "production",
+    "PORT": "3000",
+    "DATABASE_PATH": "/app/data/database.json",
+    "JWT_SECRET": "your-super-secret-jwt-key-change-in-production"
+  },
+  "volumes": [
+    {
+      "name": "database-storage",
+      "mountPath": "/app/data",
+      "size": "1Gi"
+    }
+  ],
+  "healthcheck": {
+    "path": "/api/health",
+    "interval": 30,
+    "timeout": 10,
+    "retries": 3
+  },
+  "domains": [
+    "logistics.digitalcoresystem.com"
+  ],
+  "ports": [
+    {
+      "container": 3000,
+      "public": 80,
+      "protocol": "http"
+    }
+  ]
+}
