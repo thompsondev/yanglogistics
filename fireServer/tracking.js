@@ -1,23 +1,80 @@
 // Enhanced Tracking Page with Mobile Responsiveness
 
-// Form elements
-const trackingForm = document.getElementById('trackingForm');
-const trackingResult = document.getElementById('trackingResult');
-const noResult = document.getElementById('noResult');
-
-// Enhanced form submission with mobile optimizations
-trackingForm.addEventListener('submit', async (e) => {
+// Wait for DOM to be loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🔍 Tracking page loaded, initializing...');
+    
+    // Form elements
+    const trackingForm = document.getElementById('trackingForm');
+    const trackingResult = document.getElementById('trackingResult');
+    const noResult = document.getElementById('noResult');
+    
+    if (!trackingForm) {
+        console.error('❌ Tracking form not found!');
+        return;
+    }
+    
+    console.log('✅ Tracking form found, adding event listener');
+    
+    // Fallback functions in case auth.js is not loaded
+    function showNotification(message, type = 'info') {
+        console.log(`📢 ${type.toUpperCase()}: ${message}`);
+        if (window.auth && window.auth.showNotification) {
+            window.auth.showNotification(message, type);
+        } else {
+            // Fallback notification
+            alert(`${type.toUpperCase()}: ${message}`);
+        }
+    }
+    
+    function showLoading(message = 'Loading...') {
+        console.log(`⏳ Loading: ${message}`);
+        if (window.auth && window.auth.showLoading) {
+            window.auth.showLoading(message);
+        } else {
+            // Fallback loading
+            const button = document.querySelector('button[type="submit"]');
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<span>Loading...</span>';
+            }
+        }
+    }
+    
+    function hideLoading() {
+        console.log('✅ Loading complete');
+        if (window.auth && window.auth.hideLoading) {
+            window.auth.hideLoading();
+        } else {
+            // Fallback loading
+            const button = document.querySelector('button[type="submit"]');
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = '<span>Track Package</span><i class="fas fa-arrow-right"></i>';
+            }
+        }
+    }
+    
+    // Enhanced form submission with mobile optimizations
+    trackingForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const trackingNumber = document.getElementById('trackingNumber').value.trim();
     
     if (!trackingNumber) {
+        console.log('❌ No tracking number entered');
         showNotification('Please enter a tracking number.', 'error');
         return;
     }
     
+    console.log('🔍 Tracking number entered:', trackingNumber);
+    
     try {
         showLoading();
+        
+        console.log('🌐 Making API call to track order...');
+        console.log('API object:', window.api);
+        console.log('API method:', typeof window.api?.trackOrder);
         
         // Enhanced tracking with mobile-friendly error handling
         const response = await window.api.trackOrder(trackingNumber);
@@ -60,42 +117,75 @@ trackingForm.addEventListener('submit', async (e) => {
     } finally {
         hideLoading();
     }
+    });
+    
+    // Mobile-specific optimizations
+    if (window.innerWidth <= 768) {
+        // Optimize form inputs for mobile
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            el.style.fontSize = '16px'; // Prevents iOS zoom
+            el.style.minHeight = '44px'; // Touch-friendly height
+        });
+        
+        // Optimize buttons for touch
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.style.minHeight = '48px';
+            btn.style.minWidth = '44px';
+        });
+        
+        // Enhance tracking form for mobile
+        const trackingInput = document.getElementById('trackingNumber');
+        if (trackingInput) {
+            trackingInput.style.fontSize = '16px';
+            trackingInput.style.padding = '12px 16px';
+            trackingInput.style.minHeight = '48px';
+        }
+    }
+    
+    // Handle orientation change
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+            // Re-apply mobile optimizations after orientation change
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('input, textarea, select').forEach(el => {
+                    el.style.fontSize = '16px';
+                    el.style.minHeight = '44px';
+                });
+            }
+        }, 500);
+    });
+    
+    // Handle resize events
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            // Re-apply optimizations based on new screen size
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('input, textarea, select').forEach(el => {
+                    el.style.fontSize = '16px';
+                    el.style.minHeight = '44px';
+                });
+            }
+        }, 250);
+    });
+    
+    // Check for tracking number in URL parameters with mobile optimization
+    const urlParams = new URLSearchParams(window.location.search);
+    const trackingNumber = urlParams.get('tracking');
+    
+    if (trackingNumber) {
+        document.getElementById('trackingNumber').value = trackingNumber;
+        // Auto-submit the form with delay for mobile
+        setTimeout(() => {
+            trackingForm.dispatchEvent(new Event('submit'));
+        }, window.innerWidth <= 768 ? 1000 : 500); // Longer delay on mobile for better UX
+    }
+    
+    console.log('Tracking page loaded successfully with mobile optimizations!');
 });
 
-// Enhanced order finding with mobile optimization
-async function findOrderByTrackingNumber(trackingNumber) {
-    try {
-        console.log('🔍 Searching for tracking number:', trackingNumber);
-        console.log('🔗 API URL:', window.API_BASE_URL);
-        
-        const response = await api.trackPackage(trackingNumber);
-        console.log('✅ Tracking response:', response);
-        
-        // Validate the response
-        if (!response) {
-            console.log('❌ No response received');
-            return null;
-        }
-        
-        // Check if response has the expected structure
-        if (typeof response === 'object' && response.trackingNumber) {
-            console.log('✅ Valid order response received');
-            return response;
-        } else {
-            console.log('❌ Invalid response structure:', response);
-            return null;
-        }
-        
-    } catch (error) {
-        console.error('❌ API Error:', error);
-        console.error('Error details:', {
-            message: error.message,
-            stack: error.stack,
-            apiUrl: window.API_BASE_URL
-        });
-        throw error;
-    }
-}
+// This function is no longer needed - using new API
 
 // Enhanced tracking result display with modern UI
 function displayTrackingResult(order) {
@@ -240,84 +330,9 @@ function clearTracking() {
     }
 }
 
-// Enhanced loading states with mobile optimization
-function showLoading() {
-    const submitBtn = trackingForm.querySelector('button[type="submit"]');
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tracking...';
-    submitBtn.disabled = true;
-    
-    // Add mobile-specific loading indicator
-    if (window.innerWidth <= 768) {
-        showNotification('Searching for your package...', 'info');
-    }
-}
+// These functions are now defined above in the DOMContentLoaded block
 
-function hideLoading() {
-    const submitBtn = trackingForm.querySelector('button[type="submit"]');
-    submitBtn.innerHTML = '<i class="fas fa-search"></i> Track Package';
-    submitBtn.disabled = false;
-}
-
-// Enhanced notification system with mobile optimization
-function showNotification(message, type = 'info') {
-    // Remove existing notifications
-    const existingNotification = document.querySelector('.notification');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-    
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <span class="notification-message">${message}</span>
-            <button class="notification-close">&times;</button>
-        </div>
-    `;
-    
-    // Mobile-optimized positioning
-    const isMobile = window.innerWidth <= 768;
-    
-    // Add styles
-    notification.style.cssText = `
-        position: fixed;
-        ${isMobile ? 'bottom: 20px; left: 20px; right: 20px;' : 'top: 20px; right: 20px;'}
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        z-index: 10000;
-        transform: translateY(${isMobile ? '100%' : '0'}) translateX(${isMobile ? '0' : '100%'});
-        transition: transform 0.3s ease;
-        max-width: ${isMobile ? 'none' : '400px'};
-        font-size: ${isMobile ? '0.9rem' : '1rem'};
-    `;
-    
-    // Add to page
-    document.body.appendChild(notification);
-    
-    // Animate in
-    setTimeout(() => {
-        notification.style.transform = 'translateY(0) translateX(0)';
-    }, 100);
-    
-    // Close button functionality
-    const closeBtn = notification.querySelector('.notification-close');
-    closeBtn.addEventListener('click', () => {
-        notification.style.transform = `translateY(${isMobile ? '100%' : '0'}) translateX(${isMobile ? '0' : '100%'})`;
-        setTimeout(() => notification.remove(), 300);
-    });
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.style.transform = `translateY(${isMobile ? '100%' : '0'}) translateX(${isMobile ? '0' : '100%'})`;
-            setTimeout(() => notification.remove(), 300);
-        }
-    }, 5000);
-}
+// Notification function is now defined above in the DOMContentLoaded block
 
 // FAQ Toggle Function
 function toggleFAQ(element) {
@@ -348,31 +363,7 @@ function toggleFAQ(element) {
     }
 }
 
-// Initialize FAQ functionality when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Add click event listeners to FAQ questions for better accessibility
-    const faqQuestions = document.querySelectorAll('.faq-question');
-    faqQuestions.forEach(question => {
-        question.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                toggleFAQ(this);
-            }
-        });
-        
-        // Add ARIA attributes for accessibility
-        const faqItem = question.parentElement;
-        const answer = faqItem.querySelector('.faq-answer');
-        
-        question.setAttribute('role', 'button');
-        question.setAttribute('tabindex', '0');
-        question.setAttribute('aria-expanded', 'false');
-        question.setAttribute('aria-controls', `faq-answer-${Array.from(faqQuestions).indexOf(question)}`);
-        
-        answer.setAttribute('id', `faq-answer-${Array.from(faqQuestions).indexOf(question)}`);
-        answer.setAttribute('aria-hidden', 'true');
-    });
-});
+// FAQ functionality is handled above in the main DOMContentLoaded block
 
 // Enhanced navbar background change with mobile optimization
 window.addEventListener('scroll', () => {
@@ -386,76 +377,4 @@ window.addEventListener('scroll', () => {
     }
 });
 
-// Enhanced mobile-specific initializations
-document.addEventListener('DOMContentLoaded', () => {
-    // Mobile-specific optimizations
-    if (window.innerWidth <= 768) {
-        // Optimize form inputs for mobile
-        document.querySelectorAll('input, textarea, select').forEach(el => {
-            el.style.fontSize = '16px'; // Prevents iOS zoom
-            el.style.minHeight = '44px'; // Touch-friendly height
-        });
-        
-        // Optimize buttons for touch
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.style.minHeight = '48px';
-            btn.style.minWidth = '44px';
-        });
-        
-        // Enhance tracking form for mobile
-        const trackingInput = document.getElementById('trackingNumber');
-        if (trackingInput) {
-            trackingInput.style.fontSize = '16px';
-            trackingInput.style.padding = '12px 16px';
-            trackingInput.style.minHeight = '48px';
-        }
-        
-        // Optimize timeline for mobile
-        const timelineItems = document.querySelectorAll('.timeline-item');
-        timelineItems.forEach(item => {
-            item.style.padding = '1rem 0';
-        });
-    }
-    
-    // Handle orientation change
-    window.addEventListener('orientationchange', () => {
-        setTimeout(() => {
-            // Re-apply mobile optimizations after orientation change
-            if (window.innerWidth <= 768) {
-                document.querySelectorAll('input, textarea, select').forEach(el => {
-                    el.style.fontSize = '16px';
-                    el.style.minHeight = '44px';
-                });
-            }
-        }, 500);
-    });
-    
-    // Handle resize events
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            // Re-apply optimizations based on new screen size
-            if (window.innerWidth <= 768) {
-                document.querySelectorAll('input, textarea, select').forEach(el => {
-                    el.style.fontSize = '16px';
-                    el.style.minHeight = '44px';
-                });
-            }
-        }, 250);
-    });
-    
-    // Check for tracking number in URL parameters with mobile optimization
-    const urlParams = new URLSearchParams(window.location.search);
-    const trackingNumber = urlParams.get('tracking');
-    
-    if (trackingNumber) {
-        document.getElementById('trackingNumber').value = trackingNumber;
-        // Auto-submit the form with delay for mobile
-        setTimeout(() => {
-            trackingForm.dispatchEvent(new Event('submit'));
-        }, window.innerWidth <= 768 ? 1000 : 500); // Longer delay on mobile for better UX
-    }
-    
-    console.log('Tracking page loaded successfully with mobile optimizations!');
-}); 
+// Mobile optimizations are handled above in the main DOMContentLoaded block 

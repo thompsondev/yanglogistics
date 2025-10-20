@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking Test - YangLogistics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .console-log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Tracking Test</h1>
+        <p>Test the tracking functionality with debugging</p>
+        
+        <form id="trackingForm">
+            <div class="form-group">
+                <label for="trackingNumber">Tracking Number:</label>
+                <input type="text" id="trackingNumber" placeholder="Enter tracking number (e.g., YL001002)" required>
+            </div>
+            <button type="submit" class="btn">Track Package</button>
+        </form>
+        
+        <div id="result" class="result"></div>
+        <div id="consoleLog" class="console-log"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="styles.js"></script>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+
+    <script>
+        // Console logging function
+        function log(message) {
+            console.log(message);
+            const logDiv = document.getElementById('consoleLog');
+            logDiv.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Show result function
+        function showResult(message, type = 'success') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+
+        // Show loading function
+        function showLoading() {
+            const button = document.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.textContent = 'Loading...';
+        }
+
+        // Hide loading function
+        function hideLoading() {
+            const button = document.querySelector('button[type="submit"]');
+            button.disabled = false;
+            button.textContent = 'Track Package';
+        }
+
+        // Wait for DOM to load
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Tracking test page loaded');
+            log(`🌍 Environment: ${window.YANGLOGISTICS_CONFIG?.ENVIRONMENT || 'unknown'}`);
+            log(`🔗 API URL: ${window.YANGLOGISTICS_CONFIG?.API_BASE_URL || 'unknown'}`);
+            log(`📦 API Object: ${window.api ? 'Loaded' : 'Not loaded'}`);
+            
+            const form = document.getElementById('trackingForm');
+            if (!form) {
+                log('❌ Form not found!');
+                return;
+            }
+            
+            log('✅ Form found, adding event listener');
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                log('📝 Form submitted');
+                
+                const trackingNumber = document.getElementById('trackingNumber').value.trim();
+                log(`🔍 Tracking number: ${trackingNumber}`);
+                
+                if (!trackingNumber) {
+                    log('❌ No tracking number entered');
+                    showResult('Please enter a tracking number.', 'error');
+                    return;
+                }
+                
+                try {
+                    showLoading();
+                    log('⏳ Starting API call...');
+                    
+                    if (!window.api) {
+                        throw new Error('API object not loaded');
+                    }
+                    
+                    if (typeof window.api.trackOrder !== 'function') {
+                        throw new Error('trackOrder method not available');
+                    }
+                    
+                    log('🌐 Calling api.trackOrder...');
+                    const response = await window.api.trackOrder(trackingNumber);
+                    log(`📡 API Response: ${JSON.stringify(response, null, 2)}`);
+                    
+                    if (response.success) {
+                        const order = response.order;
+                        log('✅ Order found successfully');
+                        showResult(`Order found! Customer: ${order.customerName}, Status: ${order.status}`, 'success');
+                    } else {
+                        log('❌ API returned error');
+                        showResult(`Error: ${response.message || 'Unknown error'}`, 'error');
+                    }
+                    
+                } catch (error) {
+                    log(`❌ Error: ${error.message}`);
+                    log(`❌ Error stack: ${error.stack}`);
+                    showResult(`Error: ${error.message}`, 'error');
+                } finally {
+                    hideLoading();
+                    log('✅ Request completed');
+                }
+            });
+            
+            log('✅ Event listener added successfully');
+        });
+    </script>
+</body>
+</html>
