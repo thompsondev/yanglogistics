@@ -321,6 +321,16 @@ class YangLogisticsAPI {
     }
 
     /**
+     * Update order status (specific method for status updates)
+     */
+    async updateOrderStatus(orderId, statusData) {
+        return await this.request(`/orders/${orderId}/status`, {
+            method: 'PUT',
+            body: JSON.stringify(statusData)
+        });
+    }
+
+    /**
      * Delete order
      */
     async deleteOrder(orderId) {
