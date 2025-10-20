@@ -325,7 +325,7 @@ class YangLogisticsAPI {
      */
     async updateOrderStatus(orderId, statusData) {
         return await this.request(`/orders/${orderId}/status`, {
-            method: 'PUT',
+            method: 'PATCH',
             body: JSON.stringify(statusData)
         });
     }

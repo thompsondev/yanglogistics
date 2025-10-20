@@ -514,6 +514,49 @@ app.put('/api/orders/:id', asyncHandler(async (req, res) => {
     });
 }));
 
+// Update order status (PATCH endpoint for status updates)
+app.patch('/api/orders/:id/status', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const statusData = req.body;
+
+    const db = await dbManager.readDatabase();
+    const orderIndex = db.orders.findIndex(o => o.id === id);
+
+    if (orderIndex === -1) {
+        throw createError.notFound('Order not found');
+    }
+
+    // Update order status and add to stages
+    const currentOrder = db.orders[orderIndex];
+    const newStage = {
+        stage: statusData.status,
+        location: statusData.location,
+        description: statusData.description,
+        timestamp: new Date().toISOString()
+    };
+
+    // Add new stage to stages array
+    if (!currentOrder.stages) {
+        currentOrder.stages = [];
+    }
+    currentOrder.stages.push(newStage);
+
+    // Update order with new status
+    db.orders[orderIndex] = {
+        ...currentOrder,
+        status: statusData.status,
+        updatedAt: new Date().toISOString()
+    };
+
+    await dbManager.writeDatabase(db);
+
+    res.json({
+        success: true,
+        message: 'Order status updated successfully',
+        order: db.orders[orderIndex]
+    });
+}));
+
 // Delete order
 app.delete('/api/orders/:id', asyncHandler(async (req, res) => {
     const { id } = req.params;
