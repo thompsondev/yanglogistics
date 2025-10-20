@@ -1,16 +1,21 @@
+/**
+ * YangLogistics Backend Server
+ * Professional Express.js server for Coolify deployment
+ */
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
-const fs = require('fs').promises;
-const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const morgan = require('morgan');
+const path = require('path');
 
-// Import error handling system
+// Import configurations
+const { dbManager, isProduction } = require('./database-config');
 const { 
     createError, 
     errorHandler, 
@@ -21,233 +26,118 @@ const {
     validatePhone 
 } = require('./errorHandler');
 
+// Initialize Express app
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy for correct client IP and rate limiting
+
+// Configuration
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'yanglogistics-super-secret-jwt-key-change-in-production';
+
+// Production CORS origins
+const PRODUCTION_ORIGINS = [
+    'https://yang-logistics.web.app',
+    'https://logistics.digitalcoresystem.com'
+];
+
+// Development CORS origins
+const DEVELOPMENT_ORIGINS = [
+    'http://localhost:3000',
+    'http://localhost:8080',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:8080',
+    'http://127.0.0.1:5500',
+    'http://localhost:5500'
+];
+
+// CORS configuration
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigins = isProduction ? PRODUCTION_ORIGINS : [...PRODUCTION_ORIGINS, ...DEVELOPMENT_ORIGINS];
+        
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.warn(`🚫 CORS blocked origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
 
 // Middleware
-app.use(helmet());
-app.use(compression());
-app.use(cors({
-    origin: [
-        'https://yang-logistics.web.app', 
-        'https://logistics.digitalcoresystem.com',
-        'http://localhost:3000', 
-        'http://127.0.0.1:5500', 
-        'http://localhost:5500'
-    ],
-    credentials: true
+app.use(helmet({
+    contentSecurityPolicy: false, // Disable CSP for development
+    crossOriginEmbedderPolicy: false
 }));
+
+app.use(compression());
+app.use(cors(corsOptions));
 app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 // Logging middleware
-app.use(morgan('dev'));
-
-// Serve static files (HTML, CSS, JS) - must be before routes
-app.use(express.static(__dirname));
-
-// URL routing for clean URLs (without .html extension)
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html'));
-});
-
-app.get('/signup', (req, res) => {
-    res.sendFile(path.join(__dirname, 'signup.html'));
-});
-
-app.get('/order', (req, res) => {
-    res.sendFile(path.join(__dirname, 'order.html'));
-});
-
-app.get('/tracking', (req, res) => {
-    res.sendFile(path.join(__dirname, 'tracking.html'));
-});
-
-app.get('/change-password', (req, res) => {
-    res.sendFile(path.join(__dirname, 'change-password.html'));
-});
-
-app.get('/admin-management', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin-management.html'));
-});
-
-app.get('/verify-connections', (req, res) => {
-    res.sendFile(path.join(__dirname, 'verify-connections.html'));
-});
-
-app.get('/test-auth', (req, res) => {
-    res.sendFile(path.join(__dirname, 'test-auth.html'));
-});
-
-app.get('/test-login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'test-login.html'));
-});
-
-// Catch-all route for any other HTML files
-app.get('/:page', (req, res) => {
-    const page = req.params.page;
-    
-    // Skip API routes
-    if (page.startsWith('api')) {
-        return res.status(404).json({ error: 'API endpoint not found' });
-    }
-    
-    // Try to serve the HTML file
-    const htmlFile = path.join(__dirname, `${page}.html`);
-    
-    // Check if the HTML file exists
-    fs.access(htmlFile)
-        .then(() => {
-            res.sendFile(htmlFile);
-        })
-        .catch(() => {
-            // If HTML file doesn't exist, return 404
-            res.status(404).json({ 
-                error: 'Page not found',
-                message: `The page "${page}" was not found. Try adding .html extension or check the URL.`,
-                availablePages: [
-                    'index', 'admin', 'login', 'signup', 'order', 'tracking', 
-                    'change-password', 'admin-management', 'verify-connections', 
-                    'test-auth', 'test-login'
-                ]
-            });
-        });
-});
+if (isProduction) {
+    app.use(morgan('combined'));
+} else {
+    app.use(morgan('dev'));
+}
 
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again later.'
+    max: isProduction ? 100 : 1000, // Limit each IP to 100 requests per windowMs in production
+    message: {
+        success: false,
+        error: {
+            type: 'RATE_LIMIT_EXCEEDED',
+            message: 'Too many requests from this IP, please try again later.',
+            statusCode: 429
+        }
+    },
+    standardHeaders: true,
+    legacyHeaders: false
 });
+
 app.use('/api/', limiter);
 
-// Database configuration
-const { DATABASE_PATH } = require('./database-config');
-const DB_PATH = DATABASE_PATH;
-
-// Initialize database if it doesn't exist
-async function initializeDatabase() {
-    try {
-        await fs.access(DB_PATH);
-        console.log('📊 Database file exists');
-    } catch (error) {
-        console.log('📊 Initializing new database file...');
-        const initialDb = {
-            orders: [],
-            trackingStages: [
-                "Order Placed",
-                "Package Picked Up",
-                "Out for Delivery",
-                "In Transit",
-                "Delivered",
-                "Failed Delivery"
-            ],
-            serviceTypes: [
-                "Standard Delivery",
-                "Express Delivery",
-                "Air Freight",
-                "Ocean Freight",
-                "Ground Transport",
-                "Same Day Delivery"
-            ],
-            nextOrderId: 1,
-            nextTrackingNumber: 1001,
-            adminAccounts: [
-                {
-                    id: "ADM1701234567890",
-                    firstName: "Admin",
-                    lastName: "User",
-                    email: "admin@yanglogistics.com",
-                    phone: "+1-555-0123",
-                    company: "YangLogistics",
-                    role: "super_admin",
-                    password: "Admin123!",
-                    createdAt: "2024-12-01T10:00:00Z",
-                    isActive: true
-                }
-            ]
-        };
-        
-        await fs.writeFile(DB_PATH, JSON.stringify(initialDb, null, 2), 'utf8');
-        console.log('✅ Database initialized successfully');
-    }
+// Serve static files (for development)
+if (!isProduction) {
+    app.use(express.static(path.join(__dirname, 'fireServer')));
 }
 
-// Utility functions
-async function readDatabase() {
-    try {
-        const data = await fs.readFile(DB_PATH, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error reading database:', error);
-        return {
-            orders: [],
-            adminAccounts: [],
-            nextOrderId: 1,
-            nextTrackingNumber: 1001
-        };
-    }
-}
+// ==================== ROUTES ====================
 
-async function writeDatabase(data) {
-    try {
-        await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
-        return true;
-    } catch (error) {
-        console.error('Error writing database:', error);
-        return false;
-    }
-}
-
-// Authentication middleware (disabled - public access)
-function authenticateToken(req, res, next) {
-    // Skip authentication - allow public access
-    next();
-}
-
-// Generate tracking number
-function generateTrackingNumber() {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `TRK${year}${month}${day}${random}`;
-}
-
-// Generate order ID
-function generateOrderId() {
-    return `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`;
-}
-
-// Routes
-
-// Health check
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
+    res.json({
+        status: 'OK',
         message: 'YangLogistics API is running on Coolify',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        environment: isProduction ? 'production' : 'development',
+        version: '2.0.0'
     });
 });
 
-// Root route
+// Root endpoint
 app.get('/', (req, res) => {
-    res.json({ 
+    res.json({
         message: 'YangLogistics API Server',
-        health: '/api/health',
+        version: '2.0.0',
+        environment: isProduction ? 'production' : 'development',
+        documentation: '/api/health',
         timestamp: new Date().toISOString()
     });
 });
 
-// Authentication routes
+// ==================== AUTHENTICATION ROUTES ====================
+
+// Login endpoint
 app.post('/api/auth/login', asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     
@@ -257,311 +147,230 @@ app.post('/api/auth/login', asyncHandler(async (req, res) => {
     // Validate email format
     validateEmail(email);
 
-    const db = await readDatabase();
-    const admin = db.adminAccounts.find(acc => acc.email.toLowerCase() === email.toLowerCase());
+    const db = await dbManager.readDatabase();
+    const admin = db.adminAccounts.find(acc => 
+        acc.email.toLowerCase() === email.toLowerCase() && acc.isActive
+    );
 
     if (!admin) {
-        throw createError.invalidCredentials('User account not found');
+        throw createError.invalidCredentials('User account not found or inactive');
     }
 
-    // In production, use bcrypt.compare(password, admin.password)
-    if (password !== admin.password) {
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, admin.password);
+    if (!isValidPassword) {
         throw createError.invalidCredentials('Invalid password');
     }
 
+    // Generate JWT token
     const token = jwt.sign(
         { 
             id: admin.id, 
             email: admin.email, 
-            role: admin.role 
+            role: admin.role,
+            firstName: admin.firstName,
+            lastName: admin.lastName
         }, 
         JWT_SECRET, 
         { expiresIn: '24h' }
     );
 
+    // Update last login
+    admin.lastLogin = new Date().toISOString();
+    await dbManager.writeDatabase(db);
+
     res.json({
         success: true,
+        message: 'Login successful',
         token,
         user: {
             id: admin.id,
             email: admin.email,
             firstName: admin.firstName,
             lastName: admin.lastName,
-            role: admin.role
+            role: admin.role,
+            company: admin.company
         }
     });
 }));
 
-// Change password endpoint (no authentication required)
-app.post('/api/auth/change-password', async (req, res) => {
-    try {
-        const { email, currentPassword, newPassword, confirmPassword } = req.body;
-        
-        // Validate input
-        if (!email || !currentPassword || !newPassword || !confirmPassword) {
-            return res.status(400).json({ error: 'Email and all password fields are required' });
-        }
-        
-        if (newPassword !== confirmPassword) {
-            return res.status(400).json({ error: 'New password and confirmation do not match' });
-        }
-        
-        if (newPassword.length < 8) {
-            return res.status(400).json({ error: 'New password must be at least 8 characters long' });
-        }
-        
-        // Read database and find admin by email
-        const db = await readDatabase();
-        const adminIndex = db.adminAccounts.findIndex(acc => acc.email.toLowerCase() === email.toLowerCase());
-        
-        if (adminIndex === -1) {
-            return res.status(404).json({ error: 'Admin account not found' });
-        }
-        
-        const admin = db.adminAccounts[adminIndex];
-        
-        // Verify current password
-        if (admin.password !== currentPassword) {
-            return res.status(401).json({ error: 'Current password is incorrect' });
-        }
-        
-        // Update password
-        db.adminAccounts[adminIndex].password = newPassword;
-        
-        // Save to database
-        const success = await writeDatabase(db);
-        
-        if (success) {
-            res.json({ 
-                success: true, 
-                message: 'Password changed successfully' 
-            });
-        } else {
-            res.status(500).json({ error: 'Failed to update password' });
-        }
-        
-    } catch (error) {
-        console.error('Change password error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+// Signup endpoint
+app.post('/api/auth/signup', asyncHandler(async (req, res) => {
+    const {
+        firstName,
+        lastName,
+        email,
+        phone,
+        company,
+        role,
+        password,
+        confirmPassword
+    } = req.body;
+
+    // Validate required fields
+    validateRequired(req.body, [
+        'firstName', 
+        'lastName', 
+        'email', 
+        'phone', 
+        'company', 
+        'role', 
+        'password', 
+        'confirmPassword'
+    ]);
+    
+    // Validate email format
+    validateEmail(email);
+    
+    // Validate phone format
+    validatePhone(phone);
+    
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+        throw createError.validation('Passwords do not match', 'confirmPassword');
     }
-});
-
-// Get all admins endpoint (no authentication required)
-app.get('/api/admins', async (req, res) => {
-    try {
-        // Read database
-        const db = await readDatabase();
-        
-        // Return admin accounts without passwords for security
-        const admins = db.adminAccounts.map(admin => ({
-            id: admin.id,
-            firstName: admin.firstName,
-            lastName: admin.lastName,
-            email: admin.email,
-            phone: admin.phone,
-            company: admin.company,
-            role: admin.role,
-            createdAt: admin.createdAt,
-            isActive: admin.isActive,
-            lastLogin: admin.lastLogin || null
-        }));
-        
-        res.json({
-            success: true,
-            admins: admins,
-            total: admins.length
-        });
-        
-    } catch (error) {
-        console.error('Get admins error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    
+    // Validate password strength
+    if (password.length < 8) {
+        throw createError.validation('Password must be at least 8 characters long', 'password');
     }
-});
 
-// Get specific admin by ID endpoint (no authentication required)
-app.get('/api/admins/:adminId', async (req, res) => {
-    try {
-        const { adminId } = req.params;
-        
-        // Read database
-        const db = await readDatabase();
-        
-        // Find specific admin
-        const admin = db.adminAccounts.find(acc => acc.id === adminId);
-        
-        if (!admin) {
-            return res.status(404).json({ error: 'Admin not found' });
-        }
-        
-        // Return admin without password for security
-        const adminInfo = {
-            id: admin.id,
-            firstName: admin.firstName,
-            lastName: admin.lastName,
-            email: admin.email,
-            phone: admin.phone,
-            company: admin.company,
-            role: admin.role,
-            createdAt: admin.createdAt,
-            isActive: admin.isActive,
-            lastLogin: admin.lastLogin || null
-        };
-        
-        res.json({
-            success: true,
-            admin: adminInfo
-        });
-        
-    } catch (error) {
-        console.error('Get admin error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    const db = await dbManager.readDatabase();
+
+    // Check if email already exists
+    const existingAdmin = db.adminAccounts.find(acc => 
+        acc.email.toLowerCase() === email.toLowerCase()
+    );
+
+    if (existingAdmin) {
+        throw createError.conflict('An account with this email already exists');
     }
-});
 
-// Admin password management endpoint (no authentication required)
-app.post('/api/admins/:adminId/change-password', async (req, res) => {
-    try {
-        const { adminId } = req.params;
-        const { newPassword, confirmPassword } = req.body;
-        
-        // Validate input
-        if (!newPassword || !confirmPassword) {
-            return res.status(400).json({ error: 'New password and confirmation are required' });
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Create new admin account
+    const newAdmin = {
+        id: `ADM${Date.now()}`,
+        firstName,
+        lastName,
+        email: email.toLowerCase(),
+        phone,
+        company,
+        role: role || 'admin',
+        password: hashedPassword,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isActive: true,
+        lastLogin: null
+    };
+
+    db.adminAccounts.push(newAdmin);
+    await dbManager.writeDatabase(db);
+
+    res.status(201).json({
+        success: true,
+        message: 'Admin account created successfully',
+        user: {
+            id: newAdmin.id,
+            email: newAdmin.email,
+            firstName: newAdmin.firstName,
+            lastName: newAdmin.lastName,
+            role: newAdmin.role,
+            company: newAdmin.company
         }
-        
-        if (newPassword !== confirmPassword) {
-            return res.status(400).json({ error: 'New password and confirmation do not match' });
-        }
-        
-        if (newPassword.length < 8) {
-            return res.status(400).json({ error: 'New password must be at least 8 characters long' });
-        }
-        
-        // Read database and find admin by ID
-        const db = await readDatabase();
-        const adminIndex = db.adminAccounts.findIndex(acc => acc.id === adminId);
-        
-        if (adminIndex === -1) {
-            return res.status(404).json({ error: 'Admin account not found' });
-        }
-        
-        // Update password
-        db.adminAccounts[adminIndex].password = newPassword;
-        
-        // Save to database
-        const success = await writeDatabase(db);
-        
-        if (success) {
-            res.json({ 
-                success: true, 
-                message: 'Admin password changed successfully' 
-            });
-        } else {
-            res.status(500).json({ error: 'Failed to update admin password' });
-        }
-        
-    } catch (error) {
-        console.error('Admin password change error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    });
+}));
+
+// Change password endpoint
+app.post('/api/auth/change-password', asyncHandler(async (req, res) => {
+    const { email, currentPassword, newPassword, confirmPassword } = req.body;
+
+    // Validate required fields
+    validateRequired(req.body, ['email', 'currentPassword', 'newPassword', 'confirmPassword']);
+    
+    // Validate email format
+    validateEmail(email);
+    
+    // Validate password confirmation
+    if (newPassword !== confirmPassword) {
+        throw createError.validation('New passwords do not match', 'confirmPassword');
     }
-});
-
-app.post('/api/auth/signup', async (req, res) => {
-    try {
-        const { firstName, lastName, email, phone, company, role, password } = req.body;
-
-        if (!firstName || !lastName || !email || !phone || !company || !role || !password) {
-            return res.status(400).json({ error: 'All fields are required' });
-        }
-
-        const db = await readDatabase();
-        
-        // Check if email already exists
-        const existingAdmin = db.adminAccounts.find(acc => acc.email.toLowerCase() === email.toLowerCase());
-        if (existingAdmin) {
-            return res.status(400).json({ error: 'Email already registered' });
-        }
-
-        // Create new admin account
-        const newAdmin = {
-            id: `ADM${Date.now()}`,
-            firstName,
-            lastName,
-            email,
-            phone,
-            company,
-            role,
-            password, // In production, hash with bcrypt
-            createdAt: new Date().toISOString(),
-            isActive: true
-        };
-
-        db.adminAccounts.push(newAdmin);
-        await writeDatabase(db);
-
-        res.status(201).json({
-            success: true,
-            message: 'Admin account created successfully'
-        });
-
-    } catch (error) {
-        console.error('Signup error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    
+    // Validate password strength
+    if (newPassword.length < 8) {
+        throw createError.validation('New password must be at least 8 characters long', 'newPassword');
     }
-});
 
-// Orders CRUD routes (public access)
-app.get('/api/orders', async (req, res) => {
-    try {
-        const db = await readDatabase();
-        const { search, status, serviceType, page = 1, limit = 10 } = req.query;
+    const db = await dbManager.readDatabase();
+    const admin = db.adminAccounts.find(acc => 
+        acc.email.toLowerCase() === email.toLowerCase() && acc.isActive
+    );
 
-        let filteredOrders = [...db.orders];
-
-        // Search filter
-        if (search) {
-            const searchTerm = search.toLowerCase();
-            filteredOrders = filteredOrders.filter(order => 
-                order.id.toLowerCase().includes(searchTerm) ||
-                order.trackingNumber.toLowerCase().includes(searchTerm) ||
-                order.customerName.toLowerCase().includes(searchTerm) ||
-                order.customerEmail.toLowerCase().includes(searchTerm)
-            );
-        }
-
-        // Status filter
-        if (status) {
-            filteredOrders = filteredOrders.filter(order => order.status === status);
-        }
-
-        // Service type filter
-        if (serviceType) {
-            filteredOrders = filteredOrders.filter(order => order.serviceType === serviceType);
-        }
-
-        // Pagination
-        const startIndex = (page - 1) * limit;
-        const endIndex = page * limit;
-        const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
-
-        res.json({
-            orders: paginatedOrders,
-            pagination: {
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(filteredOrders.length / limit),
-                totalOrders: filteredOrders.length,
-                hasNext: endIndex < filteredOrders.length,
-                hasPrev: page > 1
-            }
-        });
-
-    } catch (error) {
-        console.error('Get orders error:', error);
-        res.status(500).json({ error: 'Internal server error (get orders)', details: error.message });
+    if (!admin) {
+        throw createError.notFound('User account not found');
     }
-});
 
-// Allow anyone to create an order (no authentication)
+    // Verify current password
+    const isValidPassword = await bcrypt.compare(currentPassword, admin.password);
+    if (!isValidPassword) {
+        throw createError.invalidCredentials('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    admin.password = hashedPassword;
+    admin.updatedAt = new Date().toISOString();
+    
+    await dbManager.writeDatabase(db);
+
+    res.json({
+        success: true,
+        message: 'Password updated successfully'
+    });
+}));
+
+// ==================== ORDER ROUTES ====================
+
+// Get all orders
+app.get('/api/orders', asyncHandler(async (req, res) => {
+    const db = await dbManager.readDatabase();
+    const { status, serviceType, limit = 50, offset = 0 } = req.query;
+
+    let orders = db.orders || [];
+
+    // Apply filters
+    if (status) {
+        orders = orders.filter(order => order.status === status);
+    }
+    
+    if (serviceType) {
+        orders = orders.filter(order => order.serviceType === serviceType);
+    }
+
+    // Sort by creation date (newest first)
+    orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Apply pagination
+    const startIndex = parseInt(offset);
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedOrders = orders.slice(startIndex, endIndex);
+
+    res.json({
+        success: true,
+        orders: paginatedOrders,
+        pagination: {
+            total: orders.length,
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            hasMore: endIndex < orders.length
+        }
+    });
+}));
+
+// Create new order
 app.post('/api/orders', asyncHandler(async (req, res) => {
     const {
         customerName,
@@ -590,7 +399,7 @@ app.post('/api/orders', asyncHandler(async (req, res) => {
     // Validate phone format
     validatePhone(customerPhone);
     
-    // Handle both old format (direct weight) and new format (packageDetails)
+    // Handle package details
     let weight, description, quantity;
     if (packageDetails) {
         weight = packageDetails.weight;
@@ -610,11 +419,18 @@ app.post('/api/orders', asyncHandler(async (req, res) => {
         throw createError.validation('Weight must be greater than 0', 'weight', 'Please enter a valid weight');
     }
 
-    const db = await readDatabase();
+    const db = await dbManager.readDatabase();
+
+    // Generate order ID and tracking number
+    const orderId = `ORD${Date.now()}`;
+    const trackingNumber = `YL${String(db.nextTrackingNumber || 1001).padStart(6, '0')}`;
+    
+    // Increment tracking number
+    db.nextTrackingNumber = (db.nextTrackingNumber || 1001) + 1;
 
     const order = {
-        id: generateOrderId(),
-        trackingNumber: generateTrackingNumber(),
+        id: orderId,
+        trackingNumber,
         customerName,
         customerEmail,
         customerPhone,
@@ -644,154 +460,82 @@ app.post('/api/orders', asyncHandler(async (req, res) => {
     };
 
     db.orders.push(order);
-    await writeDatabase(db);
+    await dbManager.writeDatabase(db);
 
     res.status(201).json({
         success: true,
-        order,
-        message: 'Order created successfully'
+        message: 'Order created successfully',
+        order
     });
 }));
 
-app.get('/api/orders/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const db = await readDatabase();
-        
-        const order = db.orders.find(o => o.id === id);
-        
-        if (!order) {
-            return res.status(404).json({ error: 'Order not found' });
-        }
+// Get single order
+app.get('/api/orders/:id', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    
+    const db = await dbManager.readDatabase();
+    const order = db.orders.find(o => o.id === id);
 
-        res.json(order);
-
-    } catch (error) {
-        console.error('Get order error:', error);
-        res.status(500).json({ error: 'Internal server error (get order)', details: error.message });
+    if (!order) {
+        throw createError.notFound('Order not found');
     }
-});
 
-app.put('/api/orders/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updateData = req.body;
-        
-        const db = await readDatabase();
-        const orderIndex = db.orders.findIndex(o => o.id === id);
-        
-        if (orderIndex === -1) {
-            return res.status(404).json({ error: 'Order not found' });
-        }
+    res.json({
+        success: true,
+        order
+    });
+}));
 
-        // Update order
-        db.orders[orderIndex] = {
-            ...db.orders[orderIndex],
-            ...updateData,
-            updatedAt: new Date().toISOString()
-        };
+// Update order
+app.put('/api/orders/:id', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const updateData = req.body;
 
-        await writeDatabase(db);
+    const db = await dbManager.readDatabase();
+    const orderIndex = db.orders.findIndex(o => o.id === id);
 
-        res.json({
-            success: true,
-            order: db.orders[orderIndex],
-            message: 'Order updated successfully'
-        });
-
-    } catch (error) {
-        console.error('Update order error:', error);
-        res.status(500).json({ error: 'Internal server error (update order)', details: error.message });
+    if (orderIndex === -1) {
+        throw createError.notFound('Order not found');
     }
-});
 
-app.delete('/api/orders/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const db = await readDatabase();
-        
-        const orderIndex = db.orders.findIndex(o => o.id === id);
-        
-        if (orderIndex === -1) {
-            return res.status(404).json({ error: 'Order not found' });
-        }
+    // Update order
+    db.orders[orderIndex] = {
+        ...db.orders[orderIndex],
+        ...updateData,
+        updatedAt: new Date().toISOString()
+    };
 
-        db.orders.splice(orderIndex, 1);
-        await writeDatabase(db);
+    await dbManager.writeDatabase(db);
 
-        res.json({
-            success: true,
-            message: 'Order deleted successfully'
-        });
+    res.json({
+        success: true,
+        message: 'Order updated successfully',
+        order: db.orders[orderIndex]
+    });
+}));
 
-    } catch (error) {
-        console.error('Delete order error:', error);
-        res.status(500).json({ error: 'Internal server error (delete order)', details: error.message });
+// Delete order
+app.delete('/api/orders/:id', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const db = await dbManager.readDatabase();
+    const orderIndex = db.orders.findIndex(o => o.id === id);
+
+    if (orderIndex === -1) {
+        throw createError.notFound('Order not found');
     }
-});
 
-// Update order status
-app.patch('/api/orders/:id/status', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status, location, description } = req.body;
+    // Remove order
+    db.orders.splice(orderIndex, 1);
+    await dbManager.writeDatabase(db);
 
-        // Debug logging
-        console.log('🔍 Received update request:', {
-            orderId: id,
-            status,
-            location,
-            description,
-            body: req.body
-        });
+    res.json({
+        success: true,
+        message: 'Order deleted successfully'
+    });
+}));
 
-        if (!status) {
-            return res.status(400).json({ error: 'Status is required' });
-        }
-
-        const db = await readDatabase();
-        const order = db.orders.find(o => o.id === id);
-
-        if (!order) {
-            return res.status(404).json({ error: 'Order not found' });
-        }
-
-        const newStage = {
-            stage: status,
-            timestamp: new Date().toISOString(),
-            location: location && location.trim() !== '' ? location : 'Processing Center',
-            description: description && description.trim() !== '' ? description : `Order status updated to ${status}`
-        };
-
-        console.log('📝 Creating new stage:', newStage);
-
-        order.stages.push(newStage);
-        order.status = status;
-        order.currentStage = status;
-        order.updatedAt = new Date().toISOString();
-
-        // Update actual delivery if status is "Delivered"
-        if (status === 'Delivered') {
-            order.actualDelivery = new Date().toISOString();
-        }
-
-        await writeDatabase(db);
-
-        console.log('✅ Order updated successfully');
-
-        res.json({
-            success: true,
-            order,
-            message: 'Order status updated successfully'
-        });
-
-    } catch (error) {
-        console.error('Update status error:', error);
-        res.status(500).json({ error: 'Internal server error (update status)', details: error.message });
-    }
-});
-
-// Tracking route (public, no authentication)
+// Track order
 app.get('/api/track/:trackingNumber', asyncHandler(async (req, res) => {
     const { trackingNumber } = req.params;
     
@@ -799,8 +543,7 @@ app.get('/api/track/:trackingNumber', asyncHandler(async (req, res) => {
         throw createError.validation('Tracking number is required', 'trackingNumber');
     }
     
-    const db = await readDatabase();
-
+    const db = await dbManager.readDatabase();
     const order = db.orders.find(o => 
         o.trackingNumber.toLowerCase() === trackingNumber.toLowerCase()
     );
@@ -809,152 +552,180 @@ app.get('/api/track/:trackingNumber', asyncHandler(async (req, res) => {
         throw createError.orderNotFound(trackingNumber);
     }
 
-    res.json(order);
+    res.json({
+        success: true,
+        order
+    });
 }));
 
-// Dashboard statistics
-app.get('/api/dashboard/stats', async (req, res) => {
-    try {
-        const db = await readDatabase();
-        
-        const totalOrders = db.orders.length;
-        const inTransitOrders = db.orders.filter(o => o.status === 'In Transit').length;
-        const deliveredOrders = db.orders.filter(o => o.status === 'Delivered').length;
-        const totalRevenue = db.orders.reduce((sum, order) => sum + (order.price || 0), 0);
+// ==================== ADMIN ROUTES ====================
 
-        res.json({
-            totalOrders,
-            inTransitOrders,
-            deliveredOrders,
-            totalRevenue,
-            pendingOrders: db.orders.filter(o => o.status === 'Order Placed').length,
-            outForDelivery: db.orders.filter(o => o.status === 'Out for Delivery').length
-        });
+// Get all admins
+app.get('/api/admins', asyncHandler(async (req, res) => {
+    const db = await dbManager.readDatabase();
+    const admins = db.adminAccounts.map(admin => ({
+        id: admin.id,
+        firstName: admin.firstName,
+        lastName: admin.lastName,
+        email: admin.email,
+        phone: admin.phone,
+        company: admin.company,
+        role: admin.role,
+        createdAt: admin.createdAt,
+        lastLogin: admin.lastLogin,
+        isActive: admin.isActive
+    }));
 
-    } catch (error) {
-        console.error('Dashboard stats error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    res.json({
+        success: true,
+        admins
+    });
+}));
+
+// Get single admin
+app.get('/api/admins/:adminId', asyncHandler(async (req, res) => {
+    const { adminId } = req.params;
+    
+    const db = await dbManager.readDatabase();
+    const admin = db.adminAccounts.find(a => a.id === adminId);
+
+    if (!admin) {
+        throw createError.notFound('Admin not found');
     }
-});
 
-// Export orders
-app.get('/api/orders/export/csv', async (req, res) => {
-    try {
-        const db = await readDatabase();
-        const { status, serviceType } = req.query;
-
-        let filteredOrders = [...db.orders];
-
-        if (status) {
-            filteredOrders = filteredOrders.filter(o => o.status === status);
+    res.json({
+        success: true,
+        admin: {
+            id: admin.id,
+            firstName: admin.firstName,
+            lastName: admin.lastName,
+            email: admin.email,
+            phone: admin.phone,
+            company: admin.company,
+            role: admin.role,
+            createdAt: admin.createdAt,
+            lastLogin: admin.lastLogin,
+            isActive: admin.isActive
         }
+    });
+}));
 
-        if (serviceType) {
-            filteredOrders = filteredOrders.filter(o => o.serviceType === serviceType);
-        }
+// ==================== DASHBOARD ROUTES ====================
 
-        // Generate CSV
-        const headers = [
-            'Order ID',
-            'Tracking Number',
-            'Customer Name',
-            'Customer Email',
-            'Customer Phone',
-            'Service Type',
-            'Status',
-            'Price',
-            'Created Date',
-            'Estimated Delivery',
-            'Actual Delivery'
-        ];
-
-        const csvRows = [headers.join(',')];
-
-        filteredOrders.forEach(order => {
-            const row = [
-                order.id,
-                order.trackingNumber,
-                `"${order.customerName}"`,
-                order.customerEmail,
-                order.customerPhone,
-                order.serviceType,
-                order.status,
-                order.price,
-                new Date(order.createdAt).toLocaleDateString(),
-                new Date(order.estimatedDelivery).toLocaleDateString(),
-                order.actualDelivery ? new Date(order.actualDelivery).toLocaleDateString() : ''
-            ];
-            csvRows.push(row.join(','));
-        });
-
-        const csvContent = csvRows.join('\n');
-
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename=orders_${new Date().toISOString().split('T')[0]}.csv`);
-        res.send(csvContent);
-
-    } catch (error) {
-        console.error('Export error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Utility functions
-function calculateEstimatedDelivery(serviceType) {
-    const now = new Date();
-    let daysToAdd = 0;
+// Get dashboard statistics
+app.get('/api/dashboard/stats', asyncHandler(async (req, res) => {
+    const db = await dbManager.readDatabase();
+    const orders = db.orders || [];
     
-    switch (serviceType) {
-        case 'Standard Delivery': daysToAdd = 4; break;
-        case 'Express Delivery': daysToAdd = 2; break;
-        case 'Air Freight': daysToAdd = 3; break;
-        case 'Ocean Freight': daysToAdd = 10; break;
-        default: daysToAdd = 4;
-    }
-    
-    const estimatedDate = new Date(now);
-    estimatedDate.setDate(estimatedDate.getDate() + daysToAdd);
-    estimatedDate.setHours(17, 0, 0, 0);
-    
-    return estimatedDate.toISOString();
-}
+    const stats = {
+        totalOrders: orders.length,
+        ordersByStatus: {},
+        ordersByServiceType: {},
+        recentOrders: orders
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 10),
+        totalRevenue: orders.reduce((sum, order) => sum + (order.price || 0), 0)
+    };
+
+    // Count orders by status
+    orders.forEach(order => {
+        stats.ordersByStatus[order.status] = (stats.ordersByStatus[order.status] || 0) + 1;
+    });
+
+    // Count orders by service type
+    orders.forEach(order => {
+        stats.ordersByServiceType[order.serviceType] = (stats.ordersByServiceType[order.serviceType] || 0) + 1;
+    });
+
+    res.json({
+        success: true,
+        stats
+    });
+}));
+
+// Export orders to CSV
+app.get('/api/orders/export/csv', asyncHandler(async (req, res) => {
+    const db = await dbManager.readDatabase();
+    const orders = db.orders || [];
+
+    // Generate CSV
+    const csvHeader = 'ID,Tracking Number,Customer Name,Customer Email,Customer Phone,Service Type,Status,Price,Created At\n';
+    const csvRows = orders.map(order => 
+        `${order.id},${order.trackingNumber},${order.customerName},${order.customerEmail},${order.customerPhone},${order.serviceType},${order.status},${order.price},${order.createdAt}`
+    ).join('\n');
+
+    const csv = csvHeader + csvRows;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=orders.csv');
+    res.send(csv);
+}));
+
+// ==================== UTILITY FUNCTIONS ====================
 
 function calculatePrice(serviceType, weight) {
-    const weightNum = parseFloat(weight);
-    let basePrice = 0;
-    let weightMultiplier = 0;
-    switch (serviceType) {
-        case 'Standard Delivery': basePrice = 150; weightMultiplier = 5; break;
-        case 'Express Delivery': basePrice = 250; weightMultiplier = 8; break;
-        case 'Air Freight': basePrice = 400; weightMultiplier = 12; break;
-        case 'Ocean Freight': basePrice = 200; weightMultiplier = 3; break;
-        default: basePrice = 150; weightMultiplier = 5;
-    }
-    const weightPrice = weightNum * weightMultiplier;
-    return Math.round(basePrice + weightPrice);
+    const basePrices = {
+        'Standard Delivery': 10,
+        'Express Delivery': 25,
+        'Air Freight': 50,
+        'Ocean Freight': 30,
+        'Ground Transport': 15,
+        'Same Day Delivery': 40
+    };
+    
+    const basePrice = basePrices[serviceType] || 10;
+    const weightMultiplier = Math.ceil(parseFloat(weight) / 5); // $5 per 5kg
+    
+    return basePrice + (weightMultiplier * 5);
 }
 
-// Error handling middleware
+function calculateEstimatedDelivery(serviceType) {
+    const deliveryDays = {
+        'Standard Delivery': 5,
+        'Express Delivery': 2,
+        'Air Freight': 3,
+        'Ocean Freight': 14,
+        'Ground Transport': 7,
+        'Same Day Delivery': 1
+    };
+    
+    const days = deliveryDays[serviceType] || 5;
+    const deliveryDate = new Date();
+    deliveryDate.setDate(deliveryDate.getDate() + days);
+    
+    return deliveryDate.toISOString();
+}
+
+// ==================== ERROR HANDLING ====================
+
 // 404 handler for undefined routes
 app.use(notFoundHandler);
 
 // Professional error handling middleware (must be last)
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, '0.0.0.0', async () => {
+// ==================== SERVER STARTUP ====================
+
+async function startServer() {
     try {
-        // Initialize database on startup
-        await initializeDatabase();
+        // Initialize database
+        await dbManager.initialize();
         
-        console.log(`🚚 YangLogistics API Server running on port ${PORT}`);
-        console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-        console.log(`🌐 API Base: http://localhost:${PORT}`);
-        console.log(`💾 Database: ${DATABASE_PATH}`);
+        // Start server
+        app.listen(PORT, () => {
+            console.log(`🚀 YangLogistics Server running on port ${PORT}`);
+            console.log(`🌍 Environment: ${isProduction ? 'Production' : 'Development'}`);
+            console.log(`📊 Database: ${dbManager.config.databasePath}`);
+            console.log(`🔒 Security: ${isProduction ? 'Enabled' : 'Development mode'}`);
+        });
+        
     } catch (error) {
-        console.error('❌ Error during server startup:', error);
+        console.error('❌ Failed to start server:', error);
         process.exit(1);
     }
-});
+}
 
-module.exports = app; 
+// Start the server
+startServer();
+
+module.exports = app;

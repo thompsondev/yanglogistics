@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <div id="results"></div>
+    
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    
+    <script>
+        console.log('🔍 Testing API Connection...');
+        console.log('API Base URL:', window.API_BASE_URL);
+        
+        // Test 1: Direct fetch to health endpoint
+        console.log('Test 1: Direct fetch to health endpoint');
+        fetch(window.API_BASE_URL + '/health')
+            .then(response => {
+                console.log('Health check response:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Health check success:', data);
+                document.getElementById('results').innerHTML += '<p>✅ Health check: ' + JSON.stringify(data) + '</p>';
+            })
+            .catch(error => {
+                console.error('❌ Health check failed:', error);
+                document.getElementById('results').innerHTML += '<p>❌ Health check failed: ' + error.message + '</p>';
+            });
+        
+        // Test 2: Using API class
+        console.log('Test 2: Using API class');
+        if (typeof api !== 'undefined') {
+            api.healthCheck()
+                .then(data => {
+                    console.log('✅ API class health check success:', data);
+                    document.getElementById('results').innerHTML += '<p>✅ API class health check: ' + JSON.stringify(data) + '</p>';
+                })
+                .catch(error => {
+                    console.error('❌ API class health check failed:', error);
+                    document.getElementById('results').innerHTML += '<p>❌ API class health check failed: ' + error.message + '</p>';
+                });
+        } else {
+            console.error('❌ API class not loaded');
+            document.getElementById('results').innerHTML += '<p>❌ API class not loaded</p>';
+        }
+        
+        // Test 3: Signup test
+        console.log('Test 3: Signup test');
+        if (typeof api !== 'undefined') {
+            const testData = {
+                firstName: 'Test',
+                lastName: 'User',
+                email: 'test@example.com',
+                phone: '1234567890',
+                company: 'Test Company',
+                role: 'admin',
+                password: 'password123',
+                confirmPassword: 'password123'
+            };
+            
+            api.signup(testData)
+                .then(data => {
+                    console.log('✅ Signup test success:', data);
+                    document.getElementById('results').innerHTML += '<p>✅ Signup test: ' + JSON.stringify(data) + '</p>';
+                })
+                .catch(error => {
+                    console.error('❌ Signup test failed:', error);
+                    document.getElementById('results').innerHTML += '<p>❌ Signup test failed: ' + error.message + '</p>';
+                });
+        }
+    </script>
+</body>
+</html>
