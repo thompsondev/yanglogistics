@@ -20,34 +20,43 @@ trackingForm.addEventListener('submit', async (e) => {
         showLoading();
         
         // Enhanced tracking with mobile-friendly error handling
-        const order = await findOrderByTrackingNumber(trackingNumber);
+        const response = await window.api.trackOrder(trackingNumber);
         
-        console.log('📦 Order received:', order);
-        
-        // Check if order exists and has required properties
-        if (order && order.trackingNumber) {
-            console.log('✅ Valid order found, displaying result');
-            displayTrackingResult(order);
+        if (response.success) {
+            const order = response.order;
+            console.log('📦 Order received:', order);
+            
+            // Check if order exists and has required properties
+            if (order && order.trackingNumber) {
+                console.log('✅ Valid order found, displaying result');
+                displayTrackingResult(order);
+            } else {
+                console.log('❌ No valid order found, showing no result');
+                showNoResult();
+            }
         } else {
-            console.log('❌ No valid order found, showing no result');
+            console.log('❌ API returned error:', response.message);
             showNoResult();
         }
         
     } catch (error) {
         console.error('❌ Error tracking package:', error);
         
-        // More specific error messages
+        // Professional error handling
         let errorMessage = 'Error tracking package. Please try again.';
         
-        if (error.message.includes('404')) {
+        if (error.message.includes('404') || error.message.includes('not found')) {
             errorMessage = 'Tracking number not found. Please check the number and try again.';
         } else if (error.message.includes('500')) {
             errorMessage = 'Server error. Please try again later.';
-        } else if (error.message.includes('fetch')) {
+        } else if (error.message.includes('fetch') || error.message.includes('network')) {
             errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message) {
+            errorMessage = error.message;
         }
         
         showNotification(errorMessage, 'error');
+        showNoResult();
     } finally {
         hideLoading();
     }
