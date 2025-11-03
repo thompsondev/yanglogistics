@@ -66,7 +66,7 @@ const corsOptions = {
         }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
@@ -518,6 +518,9 @@ app.put('/api/orders/:id', asyncHandler(async (req, res) => {
 app.patch('/api/orders/:id/status', asyncHandler(async (req, res) => {
     const { id } = req.params;
     const statusData = req.body;
+
+    // Validate required fields
+    validateRequired(statusData, ['status', 'location', 'description']);
 
     const db = await dbManager.readDatabase();
     const orderIndex = db.orders.findIndex(o => o.id === id);
