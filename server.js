@@ -656,6 +656,68 @@ app.get('/api/admins/:adminId', asyncHandler(async (req, res) => {
     });
 }));
 
+// ==================== ADMIN MANAGEMENT ROUTES ====================
+
+// Fix all admin passwords (converts plain text to hashed)
+// WARNING: This should be protected or removed in production after use
+app.post('/api/admin/fix-passwords', asyncHandler(async (req, res) => {
+    const db = await dbManager.readDatabase();
+    
+    if (!db.adminAccounts || db.adminAccounts.length === 0) {
+        return res.json({
+            success: true,
+            message: 'No admin accounts found',
+            fixed: 0,
+            alreadyHashed: 0
+        });
+    }
+    
+    let fixedCount = 0;
+    let alreadyHashedCount = 0;
+    
+    // Process each admin account
+    for (let i = 0; i < db.adminAccounts.length; i++) {
+        const admin = db.adminAccounts[i];
+        
+        // Skip inactive accounts
+        if (!admin.isActive) continue;
+        
+        // Check if password is already hashed
+        if (admin.password && admin.password.startsWith('$2')) {
+            alreadyHashedCount++;
+            continue;
+        }
+        
+        // Check if password exists
+        if (!admin.password || admin.password.trim() === '') {
+            continue;
+        }
+        
+        // Hash the plain text password
+        const plainPassword = admin.password;
+        const hashedPassword = await bcrypt.hash(plainPassword, 12);
+        
+        // Update the password
+        db.adminAccounts[i].password = hashedPassword;
+        db.adminAccounts[i].updatedAt = new Date().toISOString();
+        
+        fixedCount++;
+    }
+    
+    // Write updated database if any changes were made
+    if (fixedCount > 0) {
+        await dbManager.writeDatabase(db);
+    }
+    
+    res.json({
+        success: true,
+        message: `Password fix completed. ${fixedCount} password(s) hashed, ${alreadyHashedCount} already hashed.`,
+        fixed: fixedCount,
+        alreadyHashed: alreadyHashedCount,
+        total: db.adminAccounts.length
+    });
+}));
+
 // ==================== DASHBOARD ROUTES ====================
 
 // Get dashboard statistics

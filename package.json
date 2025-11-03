@@ -15,6 +15,7 @@
     "setup-prod": "node scripts/setup-production.js full",
     "migrate": "node scripts/setup-production.js migrate",
     "fix-database": "node scripts/fix-database-overwrite.js",
+    "fix-passwords": "node scripts/fix-all-admin-passwords.js",
     "check-deployment": "node scripts/check-deployment-safety.js",
     "predeploy": "npm run check-deployment",
     "restore-prod": "node restore-production-data.js"
