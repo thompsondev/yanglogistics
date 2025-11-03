@@ -660,7 +660,7 @@ app.get('/api/admins/:adminId', asyncHandler(async (req, res) => {
 
 // Fix all admin passwords (converts plain text to hashed)
 // WARNING: This should be protected or removed in production after use
-app.post('/api/admin/fix-passwords', asyncHandler(async (req, res) => {
+const fixAdminPasswordsHandler = asyncHandler(async (req, res) => {
     const db = await dbManager.readDatabase();
     
     if (!db.adminAccounts || db.adminAccounts.length === 0) {
@@ -716,7 +716,11 @@ app.post('/api/admin/fix-passwords', asyncHandler(async (req, res) => {
         alreadyHashed: alreadyHashedCount,
         total: db.adminAccounts.length
     });
-}));
+});
+
+// Support both GET and POST for easier access
+app.get('/api/admin/fix-passwords', fixAdminPasswordsHandler);
+app.post('/api/admin/fix-passwords', fixAdminPasswordsHandler);
 
 // ==================== DASHBOARD ROUTES ====================
 
